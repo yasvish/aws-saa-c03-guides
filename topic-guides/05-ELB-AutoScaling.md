@@ -42,6 +42,9 @@ Key facts to lock in:
 - **AWS WAF attaches to ALB** (a web application firewall inspects HTTP — it needs Layer 7, so it can't attach to an NLB).
 - **Sticky sessions**: a cookie pins a user to the same target — for legacy apps that store session state locally. (Better design: externalize session to ElastiCache/DynamoDB, but "sticky sessions" is the quick fix answer.)
 - **Dynamic port mapping** with ECS: multiple containers of the same app on one instance, each on a random port — the ALB tracks and routes to them. This is how you pack containers densely.
+- **Mutual TLS (mTLS)**: the ALB can verify **client certificates** against a trust store (or pass them through to targets). *"Only clients holding a trusted certificate may connect"* → ALB mTLS.
+- **JWT verification** (Nov 2025): the ALB can validate JSON Web Tokens in request headers for service-to-service calls, instead of every app doing it.
+- ALB can also draw its public IPs from your own blocks via **VPC IPAM** (Mar 2025) — predictable address ranges, but still **not** a per-AZ static IP like NLB.
 - ALB gives you a **DNS name, not a static IP**. THE trap: *"customers must whitelist a fixed IP"* → ALB **cannot** do this → put an **NLB** in front, or use **Global Accelerator**.
 
 ### NLB — the fast, no-questions host (Layer 4)
@@ -52,6 +55,9 @@ The NLB never opens envelopes. It sees IP + port and forwards, blazingly fast:
 - Speaks **any TCP or UDP** — gaming servers, IoT, MQTT, custom binary protocols. ALB can't do UDP; NLB can.
 - **One static IP per AZ**, and you can assign your own **Elastic IPs**. This is THE whitelisting answer.
 - **Preserves the client source IP** by default — targets see the real client, no header tricks needed.
+- **Security groups are now supported on NLB** (Aug 2023, attached at creation) — older material says "NLB has no SGs"; that is out of date. Targets can then allow traffic *from the NLB's SG*.
+- **QUIC / TCP_QUIC listeners** (Nov 2025) for mobile-first, low-latency apps.
+- **Capacity Unit reservation** (Nov 2024): set a minimum capacity ahead of a known sharp traffic spike instead of waiting for the LB to scale up.
 - **Required as the front of a PrivateLink endpoint service** — when you expose your app privately to other VPCs, an NLB (or ALB behind an NLB) sits in front. (More in Section 6.)
 
 ### GLB — the security-appliance plumber (Layer 3)
@@ -59,6 +65,7 @@ The NLB never opens envelopes. It sees IP + port and forwards, blazingly fast:
 The Gateway Load Balancer has exactly **one job**: transparently push all traffic **through a fleet of third-party security appliances** — intrusion detection/prevention systems (IDS/IPS), next-gen firewalls, deep packet inspectors — before it reaches your app. It's a "bump in the wire": traffic goes in one side, through the appliances, out the other, and nobody has to change IP addresses.
 
 - Uses the **GENEVE protocol on port 6081** (a recognizable exam factoid).
+- **Target failover for existing flows**: new target group attributes let in-flight flows rebalance to a healthy appliance when one fails or is deregistered, instead of being dropped.
 - Keyword mapping is mechanical: *"inspect traffic with third-party / partner security appliances"* → **GLB**. Every time.
 
 ### CLB — the retired host
@@ -70,6 +77,7 @@ Classic Load Balancer is the legacy generation. It has no modern superpower. **O
 - **Cross-zone load balancing**: without it, each LB node only sends traffic to targets in *its own* AZ — if AZ-a has 2 instances and AZ-b has 8, the AZ-a pair gets hammered. Cross-zone spreads evenly across ALL targets in ALL AZs. **ALB: on by default, free. NLB: off by default, inter-AZ data charges apply when enabled.**
 - **Connection draining / deregistration delay**: when a target is removed (or ASG scales in), the LB stops NEW requests but lets in-flight requests **finish gracefully** (default 300s). *"Users get errors during scale-in"* → tune deregistration delay.
 - **SNI (Server Name Indication)**: lets one load balancer host **multiple TLS certificates** — the client says which hostname it wants during the TLS handshake, and the LB serves the matching cert. *"Host many HTTPS domains on one ALB"* → SNI.
+- **Zonal shift** (Route 53 Application Recovery Controller): shift traffic **away from an impaired AZ** with one action. Supported on ALB and NLB — on NLB it now also works with cross-zone enabled, UDP, and ALB-as-target configurations (Sep 2026). *"One AZ is degraded, shift traffic away quickly"* → zonal shift.
 - **TLS termination**: the LB decrypts HTTPS itself (certificate lives on the LB, usually from ACM) and can talk plain HTTP to targets — offloading crypto work from your instances. (TLS = Transport Layer Security, the encryption behind the "s" in https.)
 
 ## Auto Scaling Groups
@@ -115,6 +123,14 @@ Classic decoupling architecture: workers in an ASG consume jobs from an SQS queu
 
 Default behavior: pick the AZ with the most instances (to **keep AZs balanced**), then within it prefer the instance with the **oldest launch template/configuration**, then the one closest to the next billing hour. You mostly just need to know: *default scale-in keeps AZs balanced and retires the oldest config first.*
 
+### Newer ASG features worth recognizing
+
+- **Warm pools**: keep pre-initialized instances (**Stopped** = cheaper, slower; **Running** = costlier, faster) ready so scale-out is quick for apps with long boot times. *"Instances take minutes to initialize, scale-out is too slow"* → warm pool.
+- **Instance refresh**: rolling replacement of instances to roll out a new AMI/launch template, with a minimum-healthy percentage. It can now also be triggered from a **CloudFormation update policy** (Jul 2026).
+- **Group deletion protection** (Jan 2026): protects an ASG from accidental force-delete, including an IAM condition key `autoscaling:ForceDelete`.
+- **Batch termination** (Aug 2026): terminate up to 100 instances in one API call; lifecycle hooks and draining still apply.
+- **Reservations-then-balanced AZ distribution** (Jun 2026): fill your capacity reservations first, then balance the rest across AZs.
+
 ## The layered HA picture
 
 Two different tools survive two different disasters:
@@ -155,6 +171,14 @@ Route 53 (DNS)  ──►  survives a REGION dying   (DNS failover — minutes, 
 
 > *"Millions of TCP requests per second, extreme performance"* → **NLB** ("millions" + "ultra-low latency" = L4)
 
+> *"Only clients with a trusted certificate may reach the app behind the ALB"* → **ALB mutual TLS (mTLS)**
+
+> *"One AZ is impaired — move traffic out of it fast"* → **Zonal shift** (ARC)
+
+> *"New instances take too long to become ready, causing slow scale-out"* → **ASG warm pool**
+
+> *"Roll out a new AMI across the fleet gradually"* → **ASG instance refresh**
+
 ## Pocket card
 
 | Keyword | Answer |
@@ -176,6 +200,11 @@ Route 53 (DNS)  ──►  survives a REGION dying   (DNS failover — minutes, 
 | ML-forecasted scaling | Predictive scaling |
 | ASG ignores app-level failures | Enable ELB health checks on ASG |
 | Scale on job backlog | SQS queue depth metric |
+| Client certificate auth on LB | ALB mTLS |
+| Pre-warm LB for known spike | Load balancer capacity unit reservation |
+| Evacuate an impaired AZ | Zonal shift (ARC) |
+| Slow instance boot hurts scale-out | ASG warm pool |
+| Rolling AMI update | ASG instance refresh |
 | Instance-level failover | ELB (in-path, instant) |
 | Region-level failover | Route 53 (DNS, slower) |
 

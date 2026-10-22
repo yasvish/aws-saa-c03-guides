@@ -44,10 +44,10 @@ That's NAT: **private instances can initiate outbound to the internet; the inter
 
 Lock in these facts:
 
-- The NAT Gateway **lives IN a public subnet** — it needs the IGW route itself to reach the internet. Private subnets then route `0.0.0.0/0 → nat-xxx`.
-- A NAT Gateway is **per-AZ**. THE trap: one NAT Gateway shared by all AZs = a hidden single point of failure — if its AZ dies, every private subnet loses internet. *"Make NAT highly available"* → **one NAT Gateway per AZ**, each private subnet routing to its local one.
+- A (zonal) NAT Gateway **lives IN a public subnet** — it needs the IGW route itself to reach the internet. Private subnets then route `0.0.0.0/0 → nat-xxx`.
+- A zonal NAT Gateway is **per-AZ**. THE trap: one NAT Gateway shared by all AZs = a hidden single point of failure — if its AZ dies, every private subnet loses internet. *"Make NAT highly available"* → **one NAT Gateway per AZ**, each private subnet routing to its local one.
 - NAT Gateway is **managed, scales automatically (up to ~45–100 Gbps), no security groups on it**, pay per hour + per GB.
-- NEW - Regional NAT Gateway available in all AZs by default **( DOES NOT NEED to BE IN PUBLIC SUBNET)**
+- **NEW (Nov 2025) — Regional NAT Gateway.** The classic gateway above is now the *zonal* mode. In **regional availability mode** you create **one NAT Gateway for the whole VPC**: it automatically expands and contracts across AZs as your workloads move, so you get multi-AZ resilience without a gateway per AZ, and it **does NOT need a public subnet**. It supports Amazon-provided or your own IPs, but **not private (NAT-to-private) connectivity** — use zonal for that. Exam read: *"highly available outbound internet, minimal management"* → **Regional NAT Gateway** (if not offered, one zonal NAT per AZ).
 - **NAT Instance** = the legacy DIY version: an EC2 instance doing NAT. It CAN have a security group, you manage/patch/size it yourself, and — THE NAT-instance answer — you must **disable the source/destination check** on it (EC2 normally drops traffic not addressed to itself; a NAT forwards other people's traffic, so the check must go).
 - IPv6 has no NAT (every IPv6 address is public). The IPv6 equivalent of "outbound-only" is the **egress-only Internet Gateway**. *"IPv6 instances need outbound internet but no inbound"* → egress-only IGW.
 
@@ -75,6 +75,14 @@ Two firewalls, different posts, different memories:
 - **Stateless** = a gate guard with **no memory**: he checked the outgoing request, but the reply is a brand-new stranger to him — it needs its **own explicit rule**. Replies come back on **ephemeral ports (1024–65535)**, so NACLs need an outbound (and inbound, for the reverse direction) allow for that range. THE trap: *"requests go out but responses never return"* → **NACL is missing the ephemeral-port outbound rule**.
 - **SG referencing**: instead of IPs, an SG rule can say "allow port 3306 **from the app-tier's security group**." *"Only app servers may reach the database"* → **DB SG allows inbound from the app SG** — elegant, survives IP changes.
 - SGs **cannot deny**. THE trap: *"block traffic from a specific malicious IP"* → **NACL DENY rule** (a SG physically has no deny button).
+
+### VPC Block Public Access (BPA)
+
+A **VPC-wide, account-level kill switch for internet access**, layered on top of route tables, SGs and NACLs. Turn it on and traffic through the **IGW and egress-only IGW is blocked** across the region's VPCs/subnets, no matter how permissive the routes or SGs are. Modes: **bidirectional** (block in and out) or **ingress-only** (block inbound, allow outbound via NAT/egress-only IGW). You can create **exclusions** for specific VPCs/subnets that must stay public. *"Guarantee that no resource in the account is reachable from the internet, even if someone misconfigures a SG"* → **VPC Block Public Access**.
+
+### VPC Encryption Controls (Nov 2025)
+
+Audit and **enforce encryption in transit** between resources inside and across VPCs in a region. *Monitor mode* shows which flows are unencrypted; *enforce mode* blocks plaintext traffic. *"Prove/enforce that all traffic within the VPC is encrypted for compliance"* → **VPC Encryption Controls**.
 
 ## VPC Endpoints — private hallways to AWS services
 
@@ -109,6 +117,7 @@ A regional **hub-and-spoke router**: attach VPCs, **Site-to-Site VPNs, and Direc
 - **Peer TGWs across regions** for a global network.
 - The **only AWS service supporting multicast**.
 - **Per-attachment route tables** let you segment: e.g., prod VPCs can't reach dev VPCs even though both hang off the hub.
+- **Network Firewall attaches natively to TGW** (2025) — centralized traffic inspection without hand-built inspection-VPC routing.
 - Keyword: *"many VPCs (and/or on-prem) need to communicate, minimal management"* → **Transit Gateway**. "Many" starts around 4+; at 25 it's not even a question.
 
 ### PrivateLink — a service window, not a network marriage
@@ -123,10 +132,15 @@ Quick chooser: **2–3 VPCs, full network access → Peering. Many VPCs + VPN/DX
 
 ## Observability & admin access
 
-- **VPC Flow Logs** capture traffic **metadata** — source/destination IP, port, protocol, **ACCEPT or REJECT** — to CloudWatch Logs or S3. Not packet contents. Use for *"why is this connection failing?"* (look for REJECTs → an SG/NACL is blocking) and security analysis. Need the **full packets**? That's **Traffic Mirroring** (copies packets to an inspection appliance).
+- **VPC Flow Logs** capture traffic **metadata** — source/destination IP, port, protocol, **ACCEPT or REJECT** — to CloudWatch Logs or S3. Not packet contents. Use for *"why is this connection failing?"* (look for REJECTs → an SG/NACL is blocking) and security analysis. Flow Logs can now also include **EC2 resource tags and next-hop details** (2026), which makes records easier to attribute. Need the **full packets**? That's **Traffic Mirroring** (copies packets to an inspection appliance).
 - **Bastion host** = a DIY **EC2 jump box in a public subnet**: you SSH to it, then hop to private instances. You build, patch, and guard it. The SG chain: bastion's SG allows port 22 **from your corporate IP only**; private instances' SG allows 22 **from the bastion's SG**.
 - **SSM Session Manager** = the modern answer: shell access through the Systems Manager agent — **no open port 22, no public IP, no bastion, every session logged** (CloudTrail/S3). THE tie-breaker: *"MOST secure way to administer private instances"* → **Session Manager**, not a bastion.
 - **VPC Sharing (via RAM)**: one account owns the VPC, other accounts launch resources into its subnets — **many accounts, one network**, no peering needed. *"Central network team, application accounts deploy into shared subnets"* → VPC sharing.
+
+## Also worth recognizing
+
+- **VPC IPAM** centrally plans, tracks and audits IP space across accounts and regions (helps avoid the CIDR overlaps that break peering/TGW). IPAM policies now also cover public IPs for RDS and ALBs.
+- **CloudFront VPC origins** let CloudFront reach an ALB/NLB/EC2 in a **private subnet** — no public origin needed.
 
 ## Question patterns
 
@@ -141,6 +155,10 @@ Quick chooser: **2–3 VPCs, full network access → Peering. Many VPCs + VPN/DX
 > *"Expose one application to a partner VPC; CIDR ranges overlap"* → **PrivateLink** (NLB + endpoint service; overlap doesn't matter)
 
 > *"Single NAT Gateway — make the design highly available"* → **One NAT Gateway per AZ**, each private subnet routing to its local one
+
+> *"Block all internet access account-wide even if SGs/routes are misconfigured"* → **VPC Block Public Access**
+
+> *"Enforce encryption in transit for all VPC traffic"* → **VPC Encryption Controls**
 
 > *"Private instances need to download OS updates"* → **NAT Gateway in the public subnet** + private route `0.0.0.0/0 → NAT`
 
@@ -160,7 +178,9 @@ Quick chooser: **2–3 VPCs, full network access → Peering. Many VPCs + VPN/DX
 |---|---|
 | Public subnet definition | Route to IGW |
 | Outbound-only internet for private subnet | NAT Gateway (in a public subnet) |
-| NAT high availability | One NAT Gateway per AZ |
+| NAT high availability | One zonal NAT Gateway per AZ, or one Regional NAT Gateway (no public subnet) |
+| Account-wide internet kill switch | VPC Block Public Access |
+| Enforce in-transit encryption in VPC | VPC Encryption Controls |
 | NAT instance fix | Disable source/dest check |
 | IPv6 outbound-only | Egress-only IGW |
 | Reserved IPs per subnet | 5 |

@@ -50,6 +50,8 @@ Random I/O? Database? Boot volume?
 
 **The 16,000 IOPS threshold decides most questions.** Need 12,000 IOPS? gp3 does that (and cheaply). Need 50,000? Only io1/io2 can. Need up to **256,000 IOPS with sub-millisecond latency**? **io2 Block Express.** And remember: **HDD volumes (st1/sc1) can never be boot volumes.**
 
+**NEW — the line has moved:** AWS has since raised the **gp3 maximums to 80,000 IOPS, 2,000 MiB/s throughput and 64 TiB** per volume (from 16,000 / 1,000 MiB/s / 16 TiB), at the same price. The 16,000 rule above is still the classic exam pattern, but a question with 20,000–80,000 IOPS can now legitimately be gp3 — read for "cost-effective" vs "sub-millisecond / mission-critical / Multi-Attach," which still point to **io2 Block Express**.
+
 ### gp2 vs gp3: the free-money question
 
 | | gp2 (old) | gp3 (new) |
@@ -65,8 +67,11 @@ On gp2, wanting more IOPS meant buying storage you didn't need. gp3 broke that c
 - Snapshots are **incremental backups stored in S3** — only changed blocks after the first one, so they're cheap.
 - You can **copy a snapshot to another region** — that's the answer to **cross-region disaster recovery** ("back up EBS data to another region" → snapshot, copy it over).
 - **Snapshot Archive tier**: **~75% cheaper**, but restore takes **24–72 hours**. Keyword: "rarely restored, minimize snapshot cost."
-- **Recycle Bin**: retention rules that catch accidentally deleted snapshots so you can recover them.
-- **Fast Snapshot Restore (FSR)**: normally a volume restored from a snapshot is lazily loaded (first read of each block is slow). FSR pre-warms it for **full performance instantly — but it's expensive**. Keyword: "no latency on first access after restore."
+- **Recycle Bin**: retention rules that catch accidentally deleted snapshots, **EBS-backed AMIs and now EBS volumes** so you can recover them. **Rule Lock** stops anyone from quietly editing a region-level retention rule.
+- **Snapshot Lock**: makes a snapshot **WORM-style undeletable** for a set period. **Governance mode** = users with the right IAM permission can still remove the lock; **Compliance mode** = nobody, not even root, can delete it or shorten the lock (after a cooling-off period of up to 72 hours). Keyword: *"protect snapshots from accidental or malicious deletion / ransomware."* No extra charge.
+- **Fast Snapshot Restore (FSR)**: normally a volume restored from a snapshot is lazily loaded (first read of each block is slow). FSR pre-warms it for **full performance instantly — but it's expensive**. Keyword: "no latency on first access after restore." (Newer, finer-grained alternative: **Provisioned Rate for Volume Initialization**, May 2025 — you set the rate at which a restored volume is initialized, giving predictable time-to-full-performance when creating volumes from snapshots or launching from AMIs at scale.)
+- **Volume Clones** (Oct 2025): one API call makes a **point-in-time copy of a volume in the same AZ** that is usable almost immediately — no snapshot-then-restore. Source must be **encrypted**; copy must be at least as large; crash-consistent. Cross-account clones work via **AWS RAM** (re-encryptable with the target account's KMS key). Keyword: *"quickly create a copy of a production volume for dev/test."* It complements snapshots (backup, cross-AZ/region) rather than replacing them.
+- **Time-based snapshot copy**: when copying a snapshot (e.g., cross-region), you can set a **completion duration of 15 minutes to 48 hours** to meet an RPO.
 - **Data Lifecycle Manager (DLM)**: **automates** snapshot creation, retention, and deletion on a schedule. "Automate EBS backups" → DLM.
 
 ### Encryption: the snapshot-copy dance
@@ -98,6 +103,8 @@ Dials you can turn (exam wants recognition, not depth):
 | Performance mode | **General Purpose** (default) / **Max I/O** | Max I/O = thousands of concurrent clients, tolerate higher latency (big data) |
 | Throughput mode | **Elastic** (recommended) / Provisioned / Bursting | Elastic = auto-scales throughput, the modern default |
 | Lifecycle | Standard → **Infrequent Access (IA)** → **Archive** | Auto-move cold files to cheaper tiers → big savings (~90%+ on IA) |
+
+Newer EFS items: **IPv6** is supported for EFS APIs and mount targets (June 2025), and **cross-account replication** is available for keeping a copy of a file system in another account. **Amazon S3 Files** (Apr 2026, built on EFS) lets you **mount an S3 general-purpose bucket as a shared file system** on EC2, ECS/EKS and Lambda (~1 ms for active data; changes sync back to S3 within minutes; always TLS + IAM auth). Keyword: *"apps need file-system access to data that lives in S3"* → **S3 Files** (vs. EFS when the data is file-native, vs. Mountpoint for S3 when you don't need full file semantics).
 
 **The signature use case:** a fleet of instances behind an Auto Scaling Group that must all see the same files — **user uploads, CMS content, WordPress wp-content**. "Multiple EC2 instances need shared access to the same files (Linux)" → **EFS**, every time.
 
@@ -149,6 +156,12 @@ Legit uses: **cache, buffer, scratch space, temp processing files**, or data tha
 
 > *"Multiple instances must attach the same block volume in one AZ (cluster software)"* → **io1/io2 Multi-Attach** (up to 16 instances, same AZ — block storage, not a file system)
 
+> *"Protect EBS snapshots from deletion, even by admins/root (compliance)"* → **EBS Snapshot Lock, compliance mode**
+
+> *"Quickly create a copy of a production EBS volume for testing"* → **EBS Volume Clones** (same AZ, near-instant; no snapshot round trip)
+
+> *"Applications need file-system access to data stored in an S3 bucket"* → **S3 Files** (mounts the bucket via NFS-style file system, built on EFS)
+
 > *"Reduce cost of EFS for files untouched for months"* → **lifecycle policy to EFS IA/Archive** (same trick as S3 tiering, applied to the shared folder)
 
 ## Pocket card
@@ -169,7 +182,12 @@ Legit uses: **cache, buffer, scratch space, temp processing files**, or data tha
 | new extra volume unusable | format + mount + fstab |
 | move volume across AZ/region | snapshot → (copy) → restore |
 | cheap rarely-restored snapshots | Snapshot Archive (75% off, 24–72 hr restore) |
-| recover deleted snapshot | Recycle Bin |
+| recover deleted snapshot / AMI / volume | Recycle Bin (Rule Lock protects the rule) |
+| snapshots undeletable (WORM/ransomware) | Snapshot Lock (compliance mode = even root can't) |
+| instant copy of a volume, same AZ | EBS Volume Clones (source encrypted) |
+| predictable speed restoring volumes from snapshots | Provisioned Rate for Volume Initialization |
+| gp3 max (now) | 80,000 IOPS / 2,000 MiB/s / 64 TiB |
+| mount an S3 bucket as a file system | S3 Files (built on EFS) |
 | instant full performance from snapshot | Fast Snapshot Restore (expensive) |
 | automate snapshot schedules | Data Lifecycle Manager |
 | encrypt existing volume | snapshot → copy-encrypted → restore |

@@ -113,6 +113,8 @@ No shared passwords, no duplicated users, no keys emailed around. *"Give another
 
 One human, twelve AWS accounts, twelve passwords? No. **IAM Identity Center** gives your workforce **single sign-on (SSO): one login, a portal, and access to multiple AWS accounts** (plus business apps) — under the hood it just assumes roles in each account for you.
 
+Recent additions: **multi-Region replication** of workforce identities and permission sets (for organization instances using an external IdP), and an option to use Identity Center **for applications only**, without managing AWS account access.
+
 It also **federates**: connect your existing corporate identity provider — **Okta, Azure AD / Microsoft Entra ID, or on-prem Active Directory** — via **SAML 2.0** (Security Assertion Markup Language, the standard XML handshake that lets one system vouch "yes, this is Alice" to another). Employees keep their corporate password; AWS never stores it; someone leaves the company, disable them once in the IdP and every AWS door closes.
 
 **Signal decoding:** *"employees already have Active Directory / Okta credentials and shouldn't get separate IAM users"* or *"single sign-on across many AWS accounts"* → **IAM Identity Center**. (For federating *app customers* — sign in with Google/Facebook — that's **Amazon Cognito**, a different topic.)
@@ -128,7 +130,9 @@ The **root account** (the email you created the account with) can do absolutely 
 - **Don't use root for daily work** — create an admin IAM identity instead.
 - Root only for the handful of root-only tasks (closing the account, changing support plans...).
 
-Two quick tools worth a flashcard: **IAM Access Analyzer** finds resources shared with outside entities; **credentials report / access advisor** show stale users and unused permissions (the "least privilege cleanup" answers).
+**NEW — centralized root access management (AWS Organizations).** For many member accounts you no longer need to babysit each account's root user. An admin can **centrally remove root credentials** (password, access keys, signing certificates, MFA) from member accounts — **new accounts created in Organizations have no root credentials by default** — and perform the few **privileged root actions** on a member account via a short-lived, task-scoped session instead of logging in as root. SCPs can also restrict root actions. *"Secure/eliminate root users across hundreds of member accounts"* → **centralized root access management**.
+
+Two quick tools worth a flashcard: **IAM Access Analyzer** finds resources shared with outside entities; **credentials report / access advisor** show stale users and unused permissions (the "least privilege cleanup" answers). Access Analyzer also has **unused access findings** (unused roles, unused user access keys/passwords, unused permissions) — this needs its **own dedicated analyzer**, separate from the external-access one.
 
 ## Question patterns
 
@@ -152,6 +156,10 @@ Two quick tools worth a flashcard: **IAM Access Analyzer** finds resources share
 
 > *"A new AWS account was just created. What should be done FIRST to secure it?"* → **Enable MFA on the root user, delete/avoid root access keys, create an admin user for daily work.**
 
+> *"Remove root credentials from all member accounts and still perform the occasional root-only task."* → **Centralized root access management in AWS Organizations**.
+
+> *"Find IAM roles, keys and permissions that haven't been used, across the organization."* → **IAM Access Analyzer unused access findings**.
+
 ## Pocket card
 
 | Keyword in the question | Answer |
@@ -174,6 +182,7 @@ Two quick tools worth a flashcard: **IAM Access Analyzer** finds resources share
 | Require MFA for an action | Condition: aws:MultiFactorAuthPresent |
 | Root account | MFA on, no access keys, don't use daily |
 | Who is my resource shared with externally? | IAM Access Analyzer |
-| Find unused users / stale permissions | Credentials report / access advisor |
+| Find unused users / stale permissions | Credentials report / access advisor / Access Analyzer unused access findings |
+| Remove root creds from member accounts | Centralized root access management (Organizations) |
 
 IAM is the "who may act" layer under everything else — next up, S3, where you'll see these same policies show up on the resource side as bucket policies.
