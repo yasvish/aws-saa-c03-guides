@@ -37,6 +37,8 @@ Deployed as a **VM (or hardware appliance) on-premises**, backed by cloud storag
  └──────────┘                      └──────────────┘
 ```
 
+**Heads-up (Oct 2024):** **FSx File Gateway is closed to new customers** (existing ones keep working). AWS's advice is to skip the gateway and mount **FSx for Windows File Server directly over SMB** (clients cache locally), or use **FSx for ONTAP with FlexCache / Global File Cache** if you really need a local cache. The exam may still list it, so recognize the pattern — but it's no longer the modern answer.
+
 **Memory hook:** Cached = **capacity** (cloud holds it all); Stored = **speed + safety** (local holds it all, cloud holds the backup).
 
 THE trap: *"low-latency access to the FULL dataset"* → **Stored**, not Cached — a cache only keeps the hot slice; if latency must be low for *everything*, everything must live locally.
@@ -46,6 +48,8 @@ Also worth a point: **Tape Gateway** presents a **Virtual Tape Library (VTL)** s
 ### DataSync — the moving company
 
 **AWS DataSync** is the **migration / scheduled-transfer engine**: **one-time or scheduled** sync from on-prem **NFS/SMB** into **S3, EFS, or FSx**. You install an **agent** on-prem, and DataSync moves data fast (it's built for TB-scale over the network) while **preserving file metadata and permissions**, with **bandwidth throttling** so you don't flatten the office internet during business hours. Bonus fact the exam likes: DataSync also moves data **between AWS storage services** — S3 ↔ EFS ↔ FSx — no agent needed for that.
+
+**Newer:** DataSync can now also move data **between AWS and other clouds / storage** — Google Cloud Storage and Azure Blob/Azure Files (2025) — and **Enhanced mode** adds higher throughput, no per-task file-count limits and detailed transfer metrics (agent-based Azure Blob transfers over VPN/Direct Connect were added in 2026). *"Migrate from Azure Blob / Google Cloud Storage to S3"* → **DataSync**.
 
 **THE distinction of this whole section:**
 
@@ -57,6 +61,8 @@ THE trap: *"migrate 50 TB from on-prem NAS to S3, preserving permissions"* offer
 ### Transfer Family — the managed SFTP dock
 
 **AWS Transfer Family** = a fully managed **SFTP / FTPS / FTP endpoint** in front of **S3 or EFS**. Your partners keep their crusty-but-beloved SFTP scripts; the files land straight in your bucket. *"Partners upload via SFTP, must keep their existing workflow"* → **Transfer Family** — and **never** the distractor "run an SFTP server on EC2" (that's undifferentiated heavy lifting the exam always wants you to reject).
+
+Transfer Family also offers **web apps** — a managed browser UI so non-technical users can upload/download S3 data without any SFTP client.
 
 ### One pointer
 
@@ -80,6 +86,8 @@ Everything above assumes a network path. If the scenario is **offline, or the da
 
 > *"Low-latency on-prem access to file shares stored on FSx for Windows File Server"* → **FSx File Gateway**.
 
+> *"Move data from Azure Blob Storage or Google Cloud Storage into S3"* → **DataSync** (supports other clouds as sources).
+
 > *"Transfer data between S3 and EFS within AWS"* → **DataSync** (works AWS-to-AWS too, agentless).
 
 ## Pocket card
@@ -94,6 +102,8 @@ Everything above assumes a network path. If the scenario is **offline, or the da
 | Migrate / scheduled sync, preserve permissions | DataSync |
 | Bandwidth throttling, on-prem agent | DataSync |
 | S3 ↔ EFS ↔ FSx transfers | DataSync |
+| Azure / Google Cloud storage → S3 | DataSync |
+| FSx File Gateway (new customers) | Closed — use FSx for Windows directly (or ONTAP FlexCache) |
 | Partners upload via SFTP/FTPS/FTP | Transfer Family (never SFTP-on-EC2) |
 | Ongoing hybrid access vs. one-time move | Storage Gateway vs. DataSync |
 | Offline / massive data, no bandwidth | Snow Family (Section 27) |

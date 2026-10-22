@@ -30,6 +30,8 @@ The flow is always the same three-parter:
 Extra features the exam pokes at:
 
 - **Scheduled rules = serverless cron.** "Run a Lambda every night at 2 AM" → EventBridge schedule (cron or rate expression) → Lambda. **No EC2 instance running crontab** — that's the wrong answer every time.
+- **EventBridge Scheduler** is the newer, AWS-recommended way to schedule (scheduled *rules* are now treated as the legacy option): **time zones**, **one-time schedules**, flexible time windows, retries, custom target payloads, and it needs **no event bus**. Same exam answer ("serverless cron"), better tool.
+- **Bigger events**: asynchronous Lambda, SQS and EventBridge payloads were raised from 256 KB to **1 MB** (2025–26).
 - **Archive + replay**: record events on a bus, then **replay** them later — perfect for reprocessing after a bug fix.
 - **Schema registry**: EventBridge discovers event structures and generates code bindings, so developers know what fields to expect.
 - **Cross-account event buses**: send events from account A's bus to account B's bus — the standard pattern for centralizing events in a multi-account org.
@@ -62,11 +64,17 @@ That last row is gold: *"retry failed steps with exponential backoff without wri
 | Execution history | full **audit history** in console | CloudWatch Logs only |
 | Fit | long-running, **human approval**, audit-heavy | **high-volume, short** (IoT ingestion, streaming) |
 
+Newer Step Functions bits: **Distributed Map** runs a Map state at massive scale (up to thousands of parallel child executions, reading items straight from S3 — including Athena manifests and Parquet files since Sep 2025), and Step Functions added **28 more AWS SDK service integrations** (Mar 2026), so most workflows can call AWS APIs directly with **no Lambda glue code**. *"Call an AWS service from the workflow without writing a Lambda"* → **SDK service integration**.
+
 "Workflow includes a **human approval step**" or "runs for days" → **Standard**. "**Hundreds of thousands of short IoT events** per second, cost-sensitive" → **Express**.
 
 ## Question patterns
 
 > *"Run a cleanup Lambda every night at 2 AM without managing servers."* → **EventBridge scheduled rule → Lambda** (serverless cron, no EC2 crontab).
+
+> *"Run a one-time or time-zone-aware schedule at large scale without managing servers."* → **EventBridge Scheduler**.
+
+> *"Process millions of S3 objects in parallel in a workflow."* → **Step Functions Distributed Map**.
 
 > *"Ingest events from Zendesk/Datadog into AWS and route them to Lambda."* → **EventBridge partner event bus** (SaaS integration is EventBridge's exclusive turf).
 
@@ -90,7 +98,9 @@ That last row is gold: *"retry failed steps with exponential backoff without wri
 
 | Keyword | Answer |
 |---|---|
-| Serverless cron / "nightly job" | EventBridge scheduled rule |
+| Serverless cron / "nightly job" | EventBridge scheduled rule (or the newer EventBridge Scheduler) |
+| One-time / time-zone schedules | EventBridge Scheduler |
+| Massive parallel for-each over S3 data | Step Functions Distributed Map |
 | SaaS events (Zendesk, Datadog) | EventBridge partner event bus |
 | Content-based event filtering | EventBridge rule |
 | Replay past events | EventBridge archive + replay |

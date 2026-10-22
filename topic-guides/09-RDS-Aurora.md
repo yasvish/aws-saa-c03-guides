@@ -71,10 +71,20 @@ Because every node plugs into the **same shared storage**, a failed writer is re
 
 | Feature | The scenario it answers |
 |---|---|
-| **Serverless v2** | **Spiky, unpredictable, or idle** workloads — dev/test databases used a few hours a day, capacity scales itself, pay for what you use |
+| **Serverless v2** | **Spiky, unpredictable, or idle** workloads — dev/test databases used a few hours a day, capacity scales itself, pay for what you use. **Newer:** it can **scale to zero** when idle, and the 2026 platform version adds ~30% better performance and faster scale-up (reaching 12 ACUs within about a second, up to 256 ACUs) |
+| **Aurora DSQL** | **Serverless distributed SQL, PostgreSQL-compatible, active-active across Regions** (GA May 2025): **both Regional endpoints accept reads AND writes** with strong consistency, 99.999% multi-Region availability, a third Region acts as a log-only witness. Keyword: *"multi-Region active-active relational database"* (Aurora Global Database has one writer Region) |
 | **Global Database** | **Cross-region DR with RPO ~1 second, RTO <1 minute**, plus local low-latency reads on other continents. (A plain cross-region read replica = slower replication, slower promotion — the budget distractor) |
 | **Cloning** | **Copy-on-write instant copy** of a production database — a full-size staging/test copy in minutes without duplicating storage |
 | **Backtrack** | **Rewind the database in place** (Aurora MySQL) — *"undo an accidental delete/bad migration FAST, without restoring from backup"*, no new instance, no restore wait |
+
+### Blue/Green Deployments — safe upgrades and schema changes
+
+For major version upgrades or risky changes on Aurora/RDS, a **Blue/Green Deployment** creates a **synchronized staging copy ("green")** of production ("blue"). You change and test the green side, then **switch over**: AWS checks replication health and lag first, and writer downtime is typically **about five seconds or less** (single-Region). If the switchover times out, changes roll back and **neither environment is altered**. It also supports **Aurora Global Database** (Nov 2025) and **RDS Proxy** (Apr 2026). Not supported for **Multi-AZ DB cluster** deployments. Keyword: *"upgrade the engine version with minimal downtime and an easy rollback"* → **Blue/Green Deployment**.
+
+### Smaller newer items
+
+- **RDS Extended Support**: keep running a major engine version **past the end of standard support for an extra fee** (up to 3 years); disabling it after that date forces an upgrade to the next supported major version.
+- **On-Demand Capacity Reservations** (Oct 2026) now cover Aurora and RDS: hold DB instance capacity in a specific AZ.
 
 RPO (Recovery Point Objective) = how much data you may lose; RTO (Recovery Time Objective) = how long until you're back. Aurora Global Database's "~1s / <1min" pair is a memorize-it number.
 
@@ -95,6 +105,10 @@ RPO (Recovery Point Objective) = how much data you may lose; RTO (Recovery Time 
 > *"Need a full copy of the production database for testing, quickly and cheaply"* → **Aurora Cloning** (copy-on-write = instant, near-free until it diverges).
 
 > *"Developer ran a bad DELETE; restore the database to 5 minutes ago as fast as possible"* → **Aurora Backtrack** (rewind in place — no restore, no new instance).
+
+> *"Upgrade the database engine version with minimal downtime and quick rollback"* → **Blue/Green Deployment** (staging copy, ~5s switchover)
+
+> *"Relational database that is active-active (read AND write) in multiple Regions"* → **Aurora DSQL** (Aurora Global Database has a single writer Region)
 
 > *"Compliance requires database backups kept for 7 years"* → **Manual snapshots** (automated backups cap at 35 days).
 
@@ -117,6 +131,8 @@ RPO (Recovery Point Objective) = how much data you may lose; RTO (Recovery Time 
 | failover <30s, 15 low-lag replicas, 128TB autogrow | **Aurora** |
 | spiky / idle / unpredictable load | **Aurora Serverless v2** |
 | cross-region DR, RPO ~1s, RTO <1min | **Aurora Global Database** |
+| multi-Region active-active relational, serverless | **Aurora DSQL** |
+| engine upgrade, minimal downtime, rollback | **Blue/Green Deployment** |
 | instant prod copy for staging | **Aurora Cloning** |
 | undo mistake fast, no restore | **Aurora Backtrack** |
 

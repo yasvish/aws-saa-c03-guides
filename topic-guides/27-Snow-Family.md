@@ -8,6 +8,8 @@ Here's a physics problem AWS can't engineer away: **bandwidth**. Try to upload 1
 
 The second superpower: Snow devices carry **compute**. They can run EC2 instances and Lambda functions on-board, which means you can process data at places with no internet at all — ships at sea, mines, military bases, remote research stations. That's "edge computing."
 
+> **Status check (as of Oct 2026):** the Snow Family is being **wound down**. **Snowcone was discontinued (Nov 2024)** and the old Snowball Edge models were retired the same day; **Snowball Edge is available to existing customers only** (since Nov 2025), with the current models being **Storage Optimized 210 TB** and **Compute Optimized 104 vCPU**, and AWS's Snowball page lists **Dec 31, 2026** as end of support. For new customers AWS points to **DataSync** (online migration), **AWS Data Transfer Terminal** (book a time slot at an AWS facility, plug in your own drives, upload over a fast link), and **Outposts** (edge compute). The exam blueprint can still ask Snow questions, so the patterns below stay valid — but know the modern alternatives.
+
 ## The device lineup
 
 | Device | Capacity | When |
@@ -48,6 +50,8 @@ THE trap: **Snowball cannot import directly into S3 Glacier.** Data always lands
 
 > *"Transfer 40 TB once; would take 6 weeks over the existing connection"* → **Snowball Edge** (>1 week over the wire → Snow family)
 
+> *"Upload a large dataset by bringing physical drives to an AWS facility with a fast connection"* → **AWS Data Transfer Terminal** (not Snow — you travel to the data, not the other way round).
+
 > *"Manage Snow devices with a graphical interface"* → **AWS OpsHub** (the Snow GUI)
 
 ## Pocket card
@@ -62,6 +66,7 @@ THE trap: **Snowball cannot import directly into S3 Glacier.** Data always lands
 | Straight to Glacier? | No — S3 first + lifecycle rule |
 | Encryption on device | KMS, automatic |
 | GUI for Snow devices | OpsHub |
-| Preinstalled DataSync agent | Snowcone |
+| Preinstalled DataSync agent | Snowcone (discontinued) |
+| Snow wind-down: modern alternatives | DataSync (online), Data Transfer Terminal (drive drop-off), Outposts (edge compute) |
 
 Once your data (and everything else) is in AWS, you'll want to build environments the same way twice without clicking — that's CloudFormation's whole reason to exist.

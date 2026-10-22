@@ -52,7 +52,7 @@ Hook: **IAM = machines, Cognito = your users, Lambda Authorizer = anything weird
 
 ## Two mechanical facts (free points)
 
-1. **THE 29-second timeout.** API Gateway waits a **maximum of 29 seconds** for the backend. Lambda can run 15 minutes — **but not behind API Gateway**. This limit is **hard; "increase the timeout" is impossible past 29s** — any answer suggesting it is wrong. Long-running jobs go **asynchronous**: return **202 Accepted** immediately, hand the work to **SQS or Step Functions**, let the client poll or get notified.
+1. **THE 29-second timeout.** API Gateway's **default** integration timeout is **29 seconds**. Lambda can run 15 minutes — **but a standard API call won't wait that long**. *Update (June 2024):* for **Regional and private REST APIs** you can now **request a quota increase beyond 29 seconds** (may require lowering your account-level throttle quota; **edge-optimized APIs can't**; redeploy after changing). HTTP APIs keep their own lower limits. The exam's expected answer for a long-running backend is still to go **asynchronous**: return **202 Accepted** immediately, hand the work to **SQS or Step Functions**, let the client poll or get notified.
 
 ```
 Client --> API GW --202--> (immediately)
@@ -61,6 +61,13 @@ Client --> API GW --202--> (immediately)
 ```
 
 2. **CORS (Cross-Origin Resource Sharing).** When **browser JavaScript on one domain** calls your API on another domain and gets blocked with cross-origin errors → **enable CORS** on API Gateway. Browser + cross-domain + JS error = CORS, every time.
+
+## Newer features worth recognizing
+
+- **Response streaming for REST APIs** (Nov 2025): stream the response as it's produced for faster time-to-first-byte, with payloads over 10 MB.
+- **Mutual TLS to backends** (Sep 2026): REST APIs can present an ACM certificate signed by a CA you trust to the backend, not just a self-generated one.
+- **Execution logs** (Sep 2026): REST API execution logs can go to your own CloudWatch Logs, S3 or Firehose destinations, up to 1 MB per entry.
+- **TLS security policies**: enforce TLS 1.3, hardened TLS 1.2, or FIPS-aligned suites.
 
 ## Question patterns
 
@@ -71,7 +78,7 @@ Client --> API GW --202--> (immediately)
 > *"Cheapest way to expose a simple Lambda function over HTTP with JWT auth"* → **HTTP API** (~70% cheaper, minimal features)
 > *"Push live updates to a real-time dashboard / chat application"* → **WebSocket API** (persistent two-way connection)
 > *"API must be accessible only from within the VPC, never the internet"* → **Private endpoint + Interface VPC Endpoint**
-> *"Backend process takes 2 minutes; API Gateway requests keep timing out — fix it"* → **Go async: return 202, queue to SQS/Step Functions** (29s is a hard limit; you cannot raise it)
+> *"Backend process takes 2 minutes; API Gateway requests keep timing out — fix it"* → **Go async: return 202, queue to SQS/Step Functions** (29s is the default; raising it is possible only for Regional/private REST APIs via quota request, so async is the intended answer)
 > *"Browser JavaScript from another domain gets blocked calling the API"* → **Enable CORS** on API Gateway
 > *"Clients suddenly receive HTTP 429 errors"* → **Throttling** — raise the limit or add caching/usage plans
 
@@ -89,7 +96,9 @@ Client --> API GW --202--> (immediately)
 | App users sign in | Cognito User Pool authorizer |
 | Custom/third-party tokens | Lambda Authorizer |
 | 429 errors | Throttling (default 10,000 req/s) |
-| Backend > 29 seconds | Async: 202 + SQS/Step Functions |
+| Backend > 29 seconds | Async: 202 + SQS/Step Functions (limit raisable only on Regional/private REST) |
+| Stream large/slow responses | REST API response streaming (Nov 2025) |
+| Present your own CA cert to the backend | mTLS for backend integrations (Sep 2026) |
 | Cache TTL default | 300 seconds |
 | Browser cross-domain error | Enable CORS |
 

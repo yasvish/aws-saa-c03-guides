@@ -28,6 +28,11 @@ Quick flavor of each:
 
 **The Well-Architected Tool** is a **free questionnaire in the console**: you answer questions about a workload, pillar by pillar, and it produces an **improvement plan**. "Review our architecture against best practices at no cost" → WA Tool.
 
+**Newer additions (recognition only):**
+
+- **Lenses** are specialized add-on checklists in the Tool (e.g., Serverless, SaaS, Machine Learning, Generative AI). The lens catalog keeps growing, and AWS has added a **Responsible AI Lens** and refreshed the ML and Generative AI lenses (Dec 2025). The six pillars themselves have not changed.
+- **AWS Well-Architected Agent (preview, Oct 2026)** is an AI service that **continuously** (weekly) analyzes your environment and returns prioritized recommendations with ready-to-run **SSM runbooks**, cross-pillar trade-off analysis and CloudFormation/Terraform template reviews. It needs a Business+ or higher support plan. The classic **Well-Architected Tool** stays the free, point-in-time questionnaire.
+
 ## The exam angle (this is the real payoff)
 
 Pillars almost never show up as "which pillar is this?" Instead they hide in the **qualifier** of the question: "**MOST cost-effective** solution," "improve the **reliability**," "with the **LEAST operational overhead**." That qualifier is the tiebreaker — typically **two answers would technically work**, and the pillar keyword tells you which one AWS wants.
@@ -59,6 +64,8 @@ Pillars almost never show up as "which pillar is this?" Instead they hide in the
 | Pay for what you use, measure spend | Cost Optimization (Cost Explorer, Savings Plans, Spot) |
 | Maximize utilization, Graviton | Sustainability |
 | Free best-practices review | Well-Architected Tool |
+| Workload-specific checklist (ML, serverless, SaaS) | Lens |
+| Continuous AI recommendations + runbooks (preview) | Well-Architected Agent |
 | "MOST cost-effective / LEAST overhead" | The qualifier picks between two working answers |
 
 Keep those qualifiers in your peripheral vision — they matter most in the next section's territory: disaster recovery, where cost versus recovery speed *is* the whole question.

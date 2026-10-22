@@ -27,6 +27,13 @@ Spell out the jargon: both are managed stores for configuration values and secre
 
 "Store application config / feature flags / license keys / AMI IDs" or "**cheapest** option" → **Parameter Store**.
 
+## Newer features worth recognizing
+
+- **Rotation schedules:** Secrets Manager can rotate as often as **every 4 hours**, using `rate()` or `cron()` expressions (in UTC) with optional **rotation windows**.
+- **Managed external secrets:** for selected SaaS partners (e.g., Salesforce), Secrets Manager rotates the credential for you **with no rotation Lambda to write**.
+- **Parameter Store can reference Secrets Manager secrets** (`/aws/reference/secretsmanager/<name>`), so one `GetParameter` path works for both.
+- **Delivery to apps:** the **AWS Parameters and Secrets Lambda Extension** caches values for Lambda, and the **Secrets Store CSI Driver provider** is now an **EKS add-on** (Nov 2025) that mounts secrets into pods as files. Elastic Beanstalk can also pull from both services into environment variables (Mar 2025).
+
 ## The comparison table (memorize this)
 
 | | **Secrets Manager** | **Parameter Store** |

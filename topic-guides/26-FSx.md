@@ -32,9 +32,13 @@ FSx is AWS's answer: **fully managed versions of famous third-party filesystems*
 | **Scratch** | Short-term, temporary processing | No replication — cheap, data lost if hardware fails |
 | **Persistent** | Long-term storage | Replicated within AZ |
 
+- **NEW — Intelligent-Tiering storage class (May 2025):** a **fully elastic, lowest-cost Lustre** option that tiers data automatically across Frequent Access → Infrequent Access → Archive based on last access (untouched ~30 days / ~90 days move down), with an optional SSD read cache. You pay only for the data stored — no overprovisioning. Also available for **FSx for OpenZFS**. *"Lustre, cheapest, unpredictable / mostly cold data, don't want to provision capacity"* → **Intelligent-Tiering**.
+- Persistent-2 deployments (Graviton-based, up to 1 GB/s per TiB) are the current-generation persistent option.
+
 ### FSx for NetApp ONTAP
 - The migration landing pad for on-prem **NetApp** appliances. Supports **SnapMirror** replication, so you can mirror on-prem NetApp straight into AWS.
 - **Multi-protocol**: NFS, SMB, *and* iSCSI from one filesystem — the only FSx that serves Linux and Windows clients simultaneously.
+- **Second-generation ONTAP** scales out to **up to 12 HA pairs**, up to **72 GBps** throughput and **1 PiB** of provisioned SSD per file system.
 
 ### FSx for OpenZFS
 - For migrating **ZFS-based** or generic NFS Linux file servers, with ZFS goodies: instant **snapshots and clones**, low-latency performance.
@@ -65,6 +69,7 @@ FSx is AWS's answer: **fully managed versions of famous third-party filesystems*
 | HPC / ML training / rendering / GB/s | FSx for Lustre |
 | Process S3 data as files | FSx for Lustre (S3 integration) |
 | Temporary + cheapest Lustre | Scratch deployment |
+| Elastic, pay-for-used-data, auto-tiering Lustre | Intelligent-Tiering storage class |
 | Long-term Lustre | Persistent deployment |
 | NetApp / SnapMirror | FSx for NetApp ONTAP |
 | NFS + SMB + iSCSI together | FSx for NetApp ONTAP |

@@ -38,6 +38,12 @@ The rule of thumb: if the question asks for **ANY** grown-up feature — durabil
 
 **Free question alert:** *"gaming leaderboard with real-time ranking"* → **Redis sorted sets**. Sorted sets keep members ordered by score automatically — top-10 lookups are instant. If you see "leaderboard," you're done reading.
 
+### Newer: Valkey, and MemoryDB
+
+- **Valkey** is the open-source Redis fork that ElastiCache now supports alongside Redis OSS and Memcached, and AWS prices it **lower** (serverless about 33% cheaper, node-based about 20% cheaper than the other engines). For exam logic, **treat Valkey like Redis** — same feature set (persistence-style replication, Multi-AZ failover, sorted sets, pub/sub). Valkey 9.0 (May 2026) added built-in full-text/hybrid search and per-field hash expiration. *"Cheapest Redis-compatible cache"* → **ElastiCache for Valkey**.
+- **ElastiCache Serverless** needs no node sizing; Serverless Valkey's minimum billed storage is 100 MB.
+- **MemoryDB** is the sibling for when the in-memory store is your **primary, durable database**, not a cache in front of another one: Redis OSS/Valkey-compatible, data durably stored across AZs via a **multi-AZ transaction log**, **microsecond reads with single-digit-millisecond writes**. It offers **Multi-Region active-active** clusters (GA Dec 2024) and **vector search**. Keyword: *"Redis-compatible, durable, used as the system of record, no separate database"* → **MemoryDB**; *"cache in front of an existing database"* → **ElastiCache**.
+
 ### The session store pattern
 
 Picture a web tier behind an **ALB and Auto Scaling Group**. A user logs in; server #3 remembers her session — in its own memory. Then the ASG scales in, terminates server #3, and she's suddenly logged out. That's the exam giveaway phrase: **"users are logged out when instances are terminated/scaled in."**
@@ -82,6 +88,7 @@ Three services all claim to "reduce database read load" — the scenario tells y
 > *"Long analytical/reporting queries slow the production database"* → **Read Replica**, not a cache (diverse queries never hit cache)
 > *"Speed up DynamoDB reads without modifying the application"* → **DAX** (ElastiCache would require code changes)
 > *"Publish/subscribe messaging between app components using the cache layer"* → **Redis** (pub/sub is Redis-only)
+> *"Redis-compatible in-memory store that is the durable primary database, multi-AZ, no backing database"* → **MemoryDB** (ElastiCache is a cache, MemoryDB is a database)
 
 ## Pocket card
 
@@ -92,6 +99,8 @@ Three services all claim to "reduce database read load" — the scenario tells y
 | Sessions / stateless web tier | Redis (or DynamoDB) |
 | Durability, failover, backup, pub/sub | Redis |
 | Simplest, multithreaded, loss OK | Memcached |
+| Cheaper Redis-compatible cache | ElastiCache for Valkey (treat like Redis) |
+| Durable in-memory primary database | MemoryDB |
 | Never-stale cache | Write-through |
 | Stale-tolerant, cache only hot data | Lazy loading (+ TTL) |
 | Diverse/analytical read offload | Read Replica |

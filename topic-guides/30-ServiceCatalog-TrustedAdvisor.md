@@ -22,6 +22,12 @@ Signal phrase: "allow teams to deploy **only approved, standardized, compliant c
 
 THE trap (tested nuance): **the free tier of Trusted Advisor gives only a handful of core checks** (basic security + service limits). To unlock the **full set of checks — including all Cost Optimization checks — you need a Business or Enterprise support plan.** If a question asks "why can't the team see the cost optimization checks?", the answer is their support plan, not a permissions problem.
 
+Recent changes:
+- Trusted Advisor's cost checks keep evolving: an **unused NAT Gateway check** (Feb 2026) now uses Compute Optimizer metrics over a 32-day lookback, and five older cost checks, including some Savings Plan / reserved-instance optimization checks, were **deprecated** (Jan 2026).
+- Some cost checks come from **Cost Optimization Hub** and **Compute Optimizer** and require you to **opt in** to those services.
+- **AWS Well-Architected Agent (preview, Oct 2026)** is described by AWS as the next-generation evolution of Trusted Advisor and the Well-Architected Tool. Preview only — Trusted Advisor is still the exam answer.
+- Service Catalog's **Application Registry** component has moved to maintenance mode (closed to new customers from Jul 30, 2026); portfolios and products are unaffected.
+
 Also worth one neuron each:
 - Trusted Advisor **recommends**; it doesn't fix. Pair it with EventBridge/CloudWatch for alerting on check status changes.
 - Distinguish from neighbors: **Config** = "is this resource *compliant with my rules*?"; **Inspector** = software vulnerabilities on workloads; **Trusted Advisor** = broad best-practice checks across the five pillars, including cost and limits.

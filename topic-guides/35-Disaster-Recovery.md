@@ -39,9 +39,11 @@ Signal phrases:
 | Service | Role in DR |
 |---|---|
 | **Aurora Global Database** | Cross-region replication, **RPO ~1 second, RTO < 1 minute** |
-| **DynamoDB Global Tables** | Multi-region, multi-active NoSQL — writes anywhere |
+| **DynamoDB Global Tables** | Multi-region, multi-active NoSQL — writes anywhere. Default is **eventually consistent**; **multi-Region strong consistency (MRSC, GA Jun 2025)** gives **zero RPO** (needs 3 Regions: 3 replicas, or 2 replicas + a witness) |
+| **Aurora DSQL** | Serverless distributed SQL, **active-active multi-Region** with strong consistency (two peered Regions + a log-only witness Region), **99.999%** multi-Region availability |
 | **S3 Cross-Region Replication (CRR)** | Objects copied to a bucket in another region |
-| **AWS Backup** | **Centralized, cross-service backup plans** (EBS, RDS, DynamoDB, EFS…) + **Vault Lock** for immutable backups |
+| **AWS Backup** | **Centralized, cross-service backup plans** (EBS, RDS, DynamoDB, EFS…) + **Vault Lock** for immutable backups. **Logically air-gapped vaults** (shareable via RAM) plus **multi-party approval** let a separate recovery account restore even if the original account is compromised or locked out — the ransomware answer |
+| **Application Recovery Controller (ARC) Region switch** | Orchestrates a **full multi-Region failover plan** (EC2/ASG, Aurora Global, DNS via routing controls) manually or triggered by CloudWatch alarms. The older ARC *readiness checks* are closed to new customers |
 | **Elastic Disaster Recovery (DRS)** | **Continuous block-level replication of servers** (on-prem or EC2) into AWS — cheap DR for lifted servers, RPO seconds / RTO minutes |
 | **Route 53 failover routing** | Health check fails → DNS flips traffic to the DR region |
 | **DMS** | Database Migration Service — also does ongoing replication between databases |
@@ -70,6 +72,12 @@ Signal phrases:
 
 > *"Automatically route users to the standby region when the primary fails"* → **Route 53 failover routing with health checks**
 
+> *"Multi-Region NoSQL with zero data loss; reads must always return the latest write"* → **DynamoDB global tables with multi-Region strong consistency** (default global tables are eventually consistent)
+
+> *"Backups must survive a compromised or locked-out account (ransomware)"* → **AWS Backup logically air-gapped vault + multi-party approval**
+
+> *"Orchestrate and automate failover of a whole application between Regions"* → **ARC Region switch**
+
 ## Pocket card
 
 | Keyword | Answer |
@@ -82,6 +90,10 @@ Signal phrases:
 | Zero RPO/RTO, both live | Multi-Site Active-Active |
 | RPO 1s / RTO <1 min relational | Aurora Global Database |
 | Multi-region multi-active NoSQL | DynamoDB Global Tables |
+| Multi-Region NoSQL, zero RPO | Global tables with MRSC |
+| Active-active multi-Region SQL | Aurora DSQL |
+| Ransomware-proof / separate-account restore | Backup air-gapped vault + multi-party approval |
+| Automated Region failover plan | ARC Region switch |
 | Centralized cross-service backups | AWS Backup (+ Vault Lock) |
 | Replicate on-prem servers for DR | Elastic Disaster Recovery (DRS) |
 | DNS failover to DR region | Route 53 failover routing |

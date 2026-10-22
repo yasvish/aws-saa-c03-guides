@@ -25,7 +25,7 @@ The SAA-C03 isn't trying to see if you've *heard* of services — it's checking 
 | "Add an LSI to the existing DynamoDB table" | **LSIs only at table creation** — after creation, add a **GSI** |
 | "Accelerate UDP traffic with CloudFront" | CloudFront is HTTP(S) only — UDP/TCP acceleration = **Global Accelerator** |
 | "Parameter Store rotates the DB password automatically" | No native rotation — automatic rotation = **Secrets Manager** |
-| "One NAT Gateway serves all AZs, highly available" | AZ failure kills it — deploy **one NAT Gateway per AZ** |
+| "One NAT Gateway serves all AZs, highly available" | A *zonal* NAT Gateway dies with its AZ — deploy **one per AZ**, or use a **Regional NAT Gateway** (Nov 2025), which spans AZs automatically |
 | "SNS alone guarantees consumers never miss messages" | SNS doesn't persist for offline consumers — durable fan-out = **SNS → SQS** |
 | "Direct Connect is encrypted because it's private" | **Not encrypted** — run a **VPN over DX** for encryption |
 

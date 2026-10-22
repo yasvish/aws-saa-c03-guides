@@ -68,7 +68,7 @@ THE trap: "streaming" alone → Kinesis; but "**Kafka**" named explicitly → **
 | **Translate** | Language translation | "localize to 12 languages" |
 | **Comprehend** | **NLP / sentiment** analysis | "customer review sentiment" |
 | **Textract** | **Extract text + data from scanned forms/invoices** — understands tables and fields, **beyond simple OCR** | "process scanned documents/forms" |
-| **Kendra** | **Intelligent document search** (natural-language answers from your docs) | "enterprise search across wikis/manuals" |
+| **Kendra** | **Intelligent document search** (natural-language answers from your docs). *Note: moved to maintenance mode — closed to new customers from Jul 30, 2026; existing customers keep it, AWS points to Bedrock knowledge bases.* Still the classic keyword match | "enterprise search across wikis/manuals" |
 | **Personalize** | **Recommendations** engine | "customers also bought" |
 | **Forecast** | Time-series **predictions** | "predict inventory demand" |
 | **Lex** | **Chatbots** (the tech behind Alexa) | "conversational bot" |

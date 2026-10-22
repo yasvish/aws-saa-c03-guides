@@ -10,7 +10,7 @@ You have two ways to connect your building to AWS. A **Site-to-Site VPN** (Virtu
 
 - **Encrypted IPsec tunnel over the public internet.**
 - **Setup time: HOURS.** Cheap — you pay a small hourly charge plus data transfer.
-- Throughput: roughly **~1.25 Gbps per tunnel**; latency varies because the internet is the internet.
+- Throughput: roughly **~1.25 Gbps per tunnel**; latency varies because the internet is the internet. **Newer (Nov 2025): 5 Gbps tunnels**, available when the VPN terminates on a **Transit Gateway or Cloud WAN** (not a Virtual Private Gateway). You can also change a tunnel's bandwidth on an existing connection (May 2026) without rebuilding it.
 - Two components, one on each side:
 
 | Component | Lives where | What it is |
@@ -18,6 +18,9 @@ You have two ways to connect your building to AWS. A **Site-to-Site VPN** (Virtu
 | **Virtual Private Gateway (VGW)** | AWS side | The VPN endpoint attached to your VPC |
 | **Customer Gateway (CGW)** | Your side | Represents your on-prem router/firewall |
 
+- **Private IP VPN**: runs the IPsec tunnel over a Direct Connect **transit VIF** using only **private IPs** — the modern way to encrypt DX traffic without any public IPs.
+- **IPv6 outer addresses** (2025): tunnel endpoints themselves can now be IPv6, not just the traffic inside.
+- **Site-to-Site VPN Concentrator** (late 2025): a Transit Gateway attachment type for connecting **many small remote sites** at scale (no ECMP, no static routing).
 - **Client VPN** is the cousin: it connects **individual laptops** to a VPC — think "remote employees working from home," not "connect the datacenter."
 
 ## Direct Connect (DX)
@@ -25,7 +28,7 @@ You have two ways to connect your building to AWS. A **Site-to-Site VPN** (Virtu
 - **Dedicated private fiber** from your location to AWS. Never touches the public internet.
 - **Consistent bandwidth and low latency**: 1, 10, or 100 Gbps.
 - **Setup time: WEEKS to MONTHS** (someone has to physically run fiber).
-- **THE trap: Direct Connect is NOT encrypted by default.** Private is not the same as encrypted. If a question demands encryption over DX, the answer is **run a Site-to-Site VPN over the Direct Connect link** (IPsec on the private road).
+- **THE trap: Direct Connect is NOT encrypted by default.** Private is not the same as encrypted. If a question demands encryption over DX, the answer is **run a Site-to-Site VPN over the Direct Connect link** (IPsec on the private road). Newer option: **MACsec** encrypts at layer 2 on dedicated 10/100 Gbps connections.
 
 Virtual interfaces (VIFs) — how traffic gets sorted on the fiber:
 
@@ -78,6 +81,9 @@ Virtual interfaces (VIFs) — how traffic gets sorted on the fiber:
 | Cost-effective DX backup | Site-to-Site VPN |
 | One DX → many VPCs/regions | Direct Connect Gateway |
 | Remote workers → VPC | Client VPN |
+| VPN faster than 1.25 Gbps per tunnel | 5 Gbps tunnels (on TGW / Cloud WAN, not VGW) |
+| Encrypted VPN over DX, no public IPs | Private IP VPN over transit VIF |
+| Many small branch sites into TGW | Site-to-Site VPN Concentrator |
 | Private VIF / Public VIF / Transit VIF | VPC / public services / Transit Gateway |
 
 You now know how ONE office connects to AWS — next up, what happens when dozens of VPCs and offices all need to talk to each other without a wiring nightmare: Transit Gateway.

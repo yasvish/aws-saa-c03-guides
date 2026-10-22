@@ -41,6 +41,12 @@ The big data never travels to KMS; KMS only wraps/unwraps the small **data key**
 
 **S3 Bucket Key recap**: instead of one KMS call per object, S3 uses a short-lived bucket-level key → **far fewer KMS API calls → cheaper** (KMS request costs drop ~99%), at the price of **coarser CloudTrail audit granularity** (you see bucket-key events, not one event per object).
 
+## Newer KMS features worth recognizing
+
+- **Last-usage tracking (Apr 2026):** KMS now records when each key last performed a cryptographic operation (console or `GetKeyLastUsage` API), and a new condition key can block deletion of recently used keys. *"Find unused keys safely before scheduling deletion"* → **KMS last-usage tracking** (still a 7–30 day wait, though).
+- **Imported key material can be rotated on demand** without changing the key ID or ARN.
+- **Post-quantum:** KMS added **ML-DSA** signing keys, and hybrid post-quantum TLS (ML-KEM) is available on KMS, ACM and Secrets Manager endpoints. Background reading, not an exam pattern.
+
 ## CloudHSM — when the shared vault isn't enough
 
 **CloudHSM** = **dedicated, single-tenant** hardware security modules in your VPC.
@@ -86,5 +92,6 @@ The big data never travels to KMS; KMS only wraps/unwraps the small **data key**
 | "AWS cannot see keys" / dedicated hardware | CloudHSM |
 | SSL offload / own CA | CloudHSM |
 | Access needs key policy AND IAM | Both must allow |
+| Is this key still being used? | KMS last-usage tracking (2026) |
 
 You now hold the keys — next, the safes where applications keep their passwords: Secrets Manager and Parameter Store.

@@ -22,6 +22,14 @@ Now do the math. Full connectivity between n VPCs needs **n(n-1)/2** peering con
 - **THE trap: TGW is the ONLY AWS service that supports IP multicast.** See the word "multicast" → answer is Transit Gateway, done.
 - **Appliance mode**: keeps both directions of a traffic flow going through the *same* network appliance (firewall/inspection VPC) — the keyword for centralized traffic inspection.
 
+## Newer TGW features
+
+- **Policy-based routing (GA Jul 2026):** route on **source and destination IP, port and protocol**, not just destination. A policy table on an attachment holds ordered rules (first match wins) that steer matching packets to a chosen TGW route table. *"Send only certain traffic (e.g. by port) through the inspection VPC"* → **TGW policy-based routing**.
+- **Native Network Firewall attachment:** attach AWS Network Firewall straight to the TGW instead of building an inspection VPC.
+- **Client VPN native attachment (Apr 2026):** a Client VPN endpoint attaches to the TGW directly, with no intermediate VPC, and keeps the user's source IP.
+- **Flexible cost allocation (Nov 2025):** a central metering policy decides who pays data-processing charges — the source attachment's account, the destination's, or the TGW owner's.
+- **Appliance mode** now also keeps same-AZ flows in the same AZ (AZ affinity), and TGW publishes per-AZ CloudWatch metrics.
+
 ## Cost reality check
 
 TGW charges **per attachment per hour + per GB processed**. VPC peering has **no hourly charge** (just data transfer). So:
@@ -61,6 +69,8 @@ TGW charges **per attachment per hour + per GB processed**. VPC peering has **no
 | n(n-1)/2 peering explosion | Transit Gateway |
 | Multicast | Transit Gateway (only one) |
 | Isolate prod/dev at the hub | TGW route tables |
+| Route by port/protocol/source, not just destination | TGW policy-based routing |
+| Central firewall inspection | Appliance mode / native Network Firewall attachment |
 | Cross-account TGW | Share via AWS RAM |
 | Cross-region hubs | TGW peering |
 | DX into TGW | Transit VIF |

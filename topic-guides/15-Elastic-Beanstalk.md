@@ -17,6 +17,8 @@ Config tweaks live in **`.ebextensions`** — YAML/JSON files in your code bundl
 
 There's also a **Worker environment**: instead of serving web traffic, it pulls jobs from an **SQS queue** — the background-processing tier of your app.
 
+**Platform upkeep (2026):** Beanstalk retires platform branches as their runtimes lose support. All remaining **Amazon Linux 2** branches were retired on **Aug 6, 2026** (AL2 reached end of life June 30, 2026), so environments should be on **Amazon Linux 2023** platforms. Retired branches get no maintenance updates. *"Beanstalk environment on an end-of-life platform"* → **migrate to a supported platform branch** (e.g., AL2023).
+
 ## THE tested table: deployment policies
 
 This table is the single most-tested Beanstalk fact. Learn to match constraint → row.

@@ -15,6 +15,10 @@ AWS billing tools all sound alike, so think of your AWS bill as a household budg
 | **Compute Optimizer** | ML **rightsizing recommendations** for EC2, EBS volumes, Lambda, ASGs | "overprovisioned," "rightsize," "recommend instance size" |
 | **Cost Allocation Tags** | Tag resources (team/project), then slice costs by tag — must be **activated in the Billing console** | "cost per team/department/project," "chargeback" |
 
+Newer additions:
+- **Cost Optimization Hub** — one place that **consolidates recommendations across accounts and Regions** (rightsizing, idle resources, Graviton migration, Savings Plans / RI purchases), de-duplicated and ranked by estimated savings. You can set your preferred Savings Plans term and payment options so estimates match how you buy. A daily **Cost Efficiency score** (0–100%) was added at re:Invent 2025. Signal: *"one dashboard of all savings opportunities across the organization"* → **Cost Optimization Hub**.
+- **Database Savings Plans (Dec 2025)** — a commitment discount ($/hour, 1-year term) for **managed databases**: Aurora, RDS, DynamoDB, ElastiCache and more. Up to **35%** off serverless, **~20%** off provisioned instances (lower for DynamoDB/Keyspaces). Applies to Generation 7+ instances, and you can't stack it with RDS Reserved Instances or DynamoDB reserved capacity on the same workload. Signal: *"flexible commitment across database engines"* → **Database Savings Plans** (RIs lock you to one engine/instance family).
+
 Two footnotes:
 - **Savings Plans / Reserved Instances** are the *commitment discounts* themselves (covered with EC2 pricing) — Cost Explorer is where AWS **recommends** buying them based on your history.
 - **Billing Conductor** — niche one-liner: build *customized* (pro forma) billing views/rates for showing costs to internal groups or customers.
@@ -41,6 +45,10 @@ Second nuance worth a mark: tags don't help billing **retroactively or automatic
 
 > *"Decide how much Savings Plan commitment to purchase"* → **Cost Explorer recommendations** (based on your historical usage)
 
+> *"See every cost-saving recommendation across accounts in one place"* → **Cost Optimization Hub**
+
+> *"Commit to savings across Aurora, RDS and DynamoDB without picking an engine"* → **Database Savings Plans**
+
 ## Pocket card
 
 | Keyword | Answer |
@@ -53,5 +61,7 @@ Second nuance worth a mark: tags don't help billing **retroactively or automatic
 | Cost per team / chargeback | Cost Allocation Tags (activate first) |
 | RI / Savings Plan buy advice | Cost Explorer |
 | Custom internal billing views | Billing Conductor |
+| All savings recommendations, one dashboard | Cost Optimization Hub |
+| Flexible database commitment discount | Database Savings Plans |
 
 That closes out the governance-and-cost corner of the exam — from here, every scenario about "who pays, who sees, who's warned" should feel like matching verbs to vending machines.

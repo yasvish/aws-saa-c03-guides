@@ -23,6 +23,16 @@ Jargon check before we dive in:
 
 THE trap: the exam says *"users need to access S3 directly from the mobile app"* and offers "Cognito User Pools" as a tempting answer. A JWT can't call S3 — **only AWS credentials can**. Direct AWS resource access → **Identity Pools**.
 
+### Newer Cognito features (feature plans, Managed Login, passkeys)
+
+- **Feature plans for user pools:** **Lite**, **Essentials** (the default for new pools) and **Plus**. **Plus** adds **threat protection** against suspicious sign-ins; **Essentials** and **Plus** are priced differently from Lite.
+- **Managed Login** (Nov 2024) is the newer hosted sign-in experience with a **no-code branding designer**, and sits alongside the classic Hosted UI. It is part of Essentials and not available in GovCloud.
+- **Passwordless:** **passkeys** (WebAuthn), plus email and SMS one-time passwords.
+- **Multi-Region replication (Jun 2026):** user data and configuration sync to a secondary Region for failover. *"Cognito user pool must survive a Region outage"* → **multi-Region replication**.
+- **Customer managed KMS keys** are supported on the Essentials and Plus plans.
+
+None of this changes the core rule: **User Pool = authentication (JWT), Identity Pool = temporary AWS credentials.**
+
 ### The classic flow (draw this in your head)
 
 ```
@@ -80,7 +90,9 @@ If the humans in the question get a paycheck from the company, Cognito is the wr
 | Sign-up / sign-in / user directory | User Pools |
 | JWT tokens | User Pools |
 | Social login (Google/Facebook/Apple), SAML | User Pools (federation) |
-| Hosted UI, MFA | User Pools |
+| Hosted UI / Managed Login, MFA, passkeys | User Pools |
+| Suspicious sign-in protection | User Pool Plus plan (threat protection) |
+| User pool Region failover | Cognito multi-Region replication (2026) |
 | API Gateway / ALB authorizer | User Pool authorizer |
 | Temporary AWS credentials for app users | Identity Pools (via STS) |
 | Direct app access to S3/DynamoDB | Identity Pools |

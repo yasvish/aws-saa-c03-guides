@@ -92,6 +92,10 @@ You can also build **calculated health checks** — combine up to 256 child chec
 
 One neat corollary: if your DR design is **a single instance per region**, there's nothing for an ELB to balance — Route 53 Failover pointing at the instances directly is enough, and you can **skip the ELB entirely** (saves money; the exam likes this).
 
+## Accelerated recovery (Nov 2025)
+
+Route 53's **data plane** (answering queries) is famously resilient, but its **control plane** (making record changes) is homed in **us-east-1**. **Accelerated recovery** is an opt-in setting on a **public hosted zone**: Route 53 keeps a copy of the zone in **us-west-2 (Oregon)**, targeting a **60-minute RTO** for regaining the ability to edit records if us-east-1 is down. It must be **enabled before an outage**, is **free**, and does **not** cover private hosted zones. Changes submitted during the outage may need to be resubmitted after failover. *"Still be able to change public DNS records if us-east-1 is unavailable"* → **Accelerated recovery**.
+
 ## Question patterns
 
 > *"Point the apex/root domain example.com at an Application Load Balancer"* → **Alias record** (CNAME is forbidden at the apex; Alias is the AWS answer, free and auto-tracking).
@@ -112,10 +116,13 @@ One neat corollary: if your DR design is **a single instance per region**, there
 
 > *"Multi-region app needs near-INSTANT failover; DNS caching delays are unacceptable"* → **Global Accelerator instead of Route 53** (anything in the request path beats a phonebook when clients cache old answers).
 
+> *"Must be able to update public DNS records even if us-east-1 has an outage"* → **Route 53 accelerated recovery** (public zone copy in us-west-2, 60-minute RTO; enable it ahead of time).
+
 ## Pocket card
 
 | Keyword in question | Answer |
 |---|---|
+| edit public DNS records during a us-east-1 outage | **Accelerated recovery** |
 | Root/apex domain → ALB/CloudFront/S3 | **Alias record** |
 | name → name, NOT at apex | CNAME |
 | "A/B test", "10% canary" | **Weighted** |

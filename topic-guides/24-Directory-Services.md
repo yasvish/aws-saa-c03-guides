@@ -33,6 +33,13 @@ Jargon check: a **trust relationship** means two separate AD forests agree to ho
    full copy w/ trust        phone line to HQ           budget clone
 ```
 
+### What's changed recently
+
+- **Simple AD is closed to new customers as of July 30, 2026.** Existing customers keep full functionality. The exam may still list it as the "cheapest, basic" option, but new designs should use Managed Microsoft AD.
+- **Managed Microsoft AD Hybrid Edition (Aug 2025):** extends an **existing self-managed AD domain** into AWS, with AWS handling replication between the two. Think *"extend our AD domain to AWS"* rather than a separate AWS directory with a trust.
+- **Directory sharing limits rose** (Aug 2025): Standard from 5 to 25 accounts, Enterprise from 125 to 500.
+- **Self-service Standard → Enterprise upgrades** via API (Oct 2025); **multi-Region replication** now reaches Opt-In Regions (Apr 2026); **STIG-aligned security settings** (May 2026); **dual-stack IPv4/IPv6** support (Jun 2026).
+
 ### How the exam distinguishes them
 
 - **Managed Microsoft AD** is the answer when the scenario needs *actual AD machinery in AWS*: **EC2 Windows domain join**, **MFA**, seamless integration with **RDS for SQL Server / FSx for Windows / WorkSpaces**, or a **trust with on-prem** so both user sets work. Phrase to spot: *"full AD features in the cloud"* or *"trust with on-prem"*.
@@ -74,7 +81,8 @@ Remember this trio, because it fuels most directory questions: **FSx for Windows
 | MFA + domain join | Managed Microsoft AD |
 | No identities stored in cloud | AD Connector |
 | Proxy / redirect auth to on-prem | AD Connector |
-| Low cost, basic LDAP, small org | Simple AD |
+| Low cost, basic LDAP, small org | Simple AD (closed to new customers from Jul 30, 2026) |
+| Extend existing self-managed AD domain into AWS | Managed Microsoft AD Hybrid Edition |
 | No trust, no MFA | Simple AD's limits |
 | FSx Windows / WorkSpaces / RDS SQL Server | All need a directory — pick from the three |
 | Memory hook | Full copy w/ trust / phone line / budget clone |

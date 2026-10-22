@@ -82,7 +82,7 @@ A **VPC-wide, account-level kill switch for internet access**, layered on top of
 
 ### VPC Encryption Controls (Nov 2025)
 
-Audit and **enforce encryption in transit** between resources inside and across VPCs in a region. *Monitor mode* shows which flows are unencrypted; *enforce mode* blocks plaintext traffic. *"Prove/enforce that all traffic within the VPC is encrypted for compliance"* → **VPC Encryption Controls**.
+Audit and **enforce encryption in transit** between resources inside and across VPCs in a region. *Monitor mode* shows which flows are unencrypted; *enforce mode* blocks plaintext traffic. *"Prove/enforce that all traffic within the VPC is encrypted for compliance"* → **VPC Encryption Controls**. It became a **paid** feature in Mar 2026.
 
 ## VPC Endpoints — private hallways to AWS services
 

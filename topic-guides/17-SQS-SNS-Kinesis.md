@@ -36,7 +36,7 @@ One buffer fixes all three: the web tier answers instantly, messages survive cra
 More SQS facts:
 - **DLQ (Dead-Letter Queue)**: a "poison message" that keeps failing gets moved to a side queue after **MaxReceiveCount** attempts — inspect failures without clogging the main queue.
 - **Long polling** (up to **20 seconds**): consumer waits for messages instead of hammering empty-poll requests. "Reduce cost / empty responses from polling" → **long polling**.
-- **Max message size 256 KB.** Bigger payloads → **store in S3, send a pointer** in the message.
+- **Max message size 1 MiB** (raised from 256 KB in Aug 2025, standard and FIFO; older study material and some exam wording still say 256 KB). Bigger payloads → **store in S3, send a pointer** in the message (the SQS Extended Client Library does this, up to 2 GB).
 - **Retention: 4 days default, 14 days max.** Not a database — collect your mail.
 - **Standard vs FIFO**:
 
@@ -47,11 +47,15 @@ More SQS facts:
 | Order | Best-effort | **Strict order** |
 | Trigger | Default choice | "Order matters" / "no duplicates" |
 
+- **FIFO high throughput mode** lifts the default 300 / 3,000 msg/s cap (it scales with the number of distinct message group IDs; exact limits are per-Region quotas). The 300 / 3,000 figures remain the exam default.
+- **Fair queues (Jul 2025)** solve the **noisy-neighbor** problem in a shared **standard** queue: set a **message group ID per tenant** and SQS detects a tenant flooding the queue and delays *its* messages so quiet tenants keep low latency. No consumer changes, nothing is dropped or throttled. *"Multi-tenant SaaS on one SQS queue; one tenant's burst starves the others"* → **SQS fair queues** (not a queue per tenant, not FIFO).
 - Classic pattern: **Auto Scaling Group of workers scaling on queue depth** (CloudWatch metric `ApproximateNumberOfMessagesVisible`) — the queue gets long, more workers spawn.
 
 ## SNS — the megaphone (PUSH, one → MANY)
 
 **SNS (Simple Notification Service)**: publish one message to a **topic**, and SNS **pushes** it to ALL **subscribers** simultaneously — **Lambda, SQS, HTTP endpoints, email, SMS, mobile push**.
+
+SNS now also accepts payloads up to **1 MiB** (Sep 2026), matching SQS.
 
 Critical nature: **SNS stores nothing.** It's a **megaphone, not a mailbox** — if a subscriber is down at shout-time, that subscriber misses the message. **Message filtering** lets each subscriber receive only messages matching a policy (e.g., billing gets only `order_type: refund`).
 
@@ -74,9 +78,16 @@ SNS → **multiple SQS queues**. Why not SNS alone? **Durability**: if the fraud
 
 Capacity unit = the **shard**: **1 MB/s in, 2 MB/s out**, and **ordering is guaranteed per shard** (partition key decides the shard). More throughput = more shards.
 
+Newer Streams features worth recognizing:
+- **On-demand Advantage** (Nov 2025): on-demand mode with **warm throughput** (pre-provisioned instant capacity, no extra charge for the warm capacity) and lower pricing for high-volume streams. Per-partition-key limit stays 1 MiB/s.
+- **Larger records**: up to **10 MiB** per record (Oct 2025), opt-in per stream via `UpdateMaxRecordSize`; the default is still 1 MiB, and shard limits (1 MB/s in, 2 MB/s out) are unchanged, so it's for occasional big records, not sustained ones.
+- **Direct delivery to S3** (Aug 2026): Streams can deliver straight into general purpose S3 buckets (and to Iceberg tables on S3 Tables) without building a Firehose/Lambda pipeline. Firehose is still the classic "zero-code to S3" answer on the exam.
+
 Kinesis's kill-shots vs SQS: **"reprocess yesterday's data"** or **"two applications must read the same stream"** → Kinesis Data Streams, never SQS.
 
 ## Kinesis Data Firehose — the delivery truck
+
+(Renamed **Amazon Data Firehose** in Feb 2024 — same service, same APIs; older questions and materials still say Kinesis Data Firehose.)
 
 Streams is a river; **Firehose** is a delivery truck on a schedule: **near-real-time (~60 seconds buffering)**, **ZERO code, fully managed**, and it delivers to fixed destinations: **S3, Redshift, OpenSearch, Splunk** (plus optional **Lambda transform** en route).
 
@@ -107,7 +118,8 @@ Existing on-prem app speaking **open broker protocols — MQTT, AMQP, JMS, STOMP
 > *"Stream IoT telemetry into S3 with the least operational overhead, no custom code"* → **Kinesis Data Firehose** (zero-code delivery truck to S3)
 > *"Reduce cost of consumers polling an often-empty queue"* → **Long polling (20s)** (fewer empty receives)
 > *"Migrate an on-prem RabbitMQ/ActiveMQ app using AMQP/JMS/MQTT without rewriting"* → **Amazon MQ** (protocol names = MQ)
-> *"Message payloads are 1 MB, exceeding the SQS limit"* → **Store in S3, send a pointer** (256 KB cap)
+> *"Message payloads (e.g., 5 MB) exceed the SQS limit"* → **Store in S3, send a pointer** (cap is 1 MiB now, 256 KB in older material)
+> *"Multi-tenant app on one standard queue; one tenant's spike delays everyone"* → **SQS fair queues** (message group ID per tenant)
 > *"Each subscriber should only receive certain message types from a topic"* → **SNS message filtering** (filter policy per subscription)
 
 ## Pocket card
@@ -120,13 +132,14 @@ Existing on-prem app speaking **open broker protocols — MQTT, AMQP, JMS, STOMP
 | Poison messages | DLQ + MaxReceiveCount |
 | Empty-poll cost | Long polling (20s) |
 | Strict order + exactly-once | FIFO (300 / 3,000 msg/s) |
-| Message > 256 KB | S3 + pointer |
+| Message > 1 MiB (256 KB in older material) | S3 + pointer |
+| Noisy tenant on shared queue | SQS fair queues (group ID per tenant) |
 | Retention | 4 days default / 14 max |
 | One → many, PUSH, instant | SNS (stores nothing) |
 | Notify many, durably | SNS → multiple SQS (fan-out) |
 | Multiple consumers, same data, replay | Kinesis Data Streams (24h–365d) |
 | Shard throughput | 1 MB/s in, 2 MB/s out, order per shard |
-| Stream → S3, zero code, ~60s | Firehose (S3/Redshift/OpenSearch/Splunk) |
+| Stream → S3, zero code, ~60s | Firehose (now "Amazon Data Firehose"; S3/Redshift/OpenSearch/Splunk) |
 | MQTT / AMQP / JMS / RabbitMQ | Amazon MQ |
 | Workers scale on queue depth | ASG + CloudWatch queue metric |
 

@@ -42,6 +42,12 @@ But now a new problem: real applications run *hundreds* of containers. Who resta
 
 **Misconception to kill:** Fargate is **not a third orchestrator**. It's a compute layer that plugs into **BOTH ECS and EKS**. ECS/EKS decide *what* runs; Fargate is one option for *where* it runs.
 
+### Newer ways to run containers (2024–2025)
+
+- **ECS Managed Instances** (Sep 2025): ECS provisions and operates EC2 instances **in your account** for you (auto-patching on a regular cycle). It's the middle path: **EC2 features (GPUs, instance choice, discounts) without managing the instances**. *"Containers needing GPUs / specific instance types, but minimal server management"* → **ECS Managed Instances**.
+- **ECS Express Mode** (Nov 2025): give it a container image and it builds the ALB, scaling, networking and HTTPS endpoint for you on Fargate. *"Deploy a containerized web app/API fast with production defaults, no infrastructure setup"* → **ECS Express Mode**. No extra charge beyond the resources it creates.
+- **EKS Auto Mode** (Dec 2024): AWS manages the **EKS worker nodes, scaling, networking and storage add-ons** for you, not just the control plane. *"Run Kubernetes with minimal operational overhead"* → **EKS Auto Mode** (or EKS on Fargate).
+
 ## When EKS? Only two signals
 
 Default to **ECS** unless the question says:
@@ -95,6 +101,9 @@ Hook: **Execution = getting the container up. Task Role = what the app does once
 > *"Avoid vendor lock-in / portable across clouds"* → **EKS** (Kubernetes is the portability play)
 > *"Cost-optimize fault-tolerant containerized batch jobs on Fargate"* → **Fargate Spot** (interruptible = Spot)
 > *"Scale container count based on messages waiting in a queue"* → **ECS Service Auto Scaling on SQS queue depth**
+> *"Containers need GPUs but the team doesn't want to manage EC2 instances"* → **ECS Managed Instances**
+> *"Get a containerized web app running with load balancer and scaling from just an image"* → **ECS Express Mode**
+> *"Kubernetes, but AWS should manage the nodes too"* → **EKS Auto Mode**
 
 ## Pocket card
 
@@ -111,5 +120,8 @@ Hook: **Execution = getting the container up. Task Role = what the app does once
 | Per-task ENI + security group | awsvpc mode |
 | Cheap interruptible Fargate | Fargate Spot |
 | Multiple same-service tasks, one instance | ALB dynamic port mapping |
+| GPUs/EC2 features, AWS runs the instances | ECS Managed Instances |
+| Image in, production web service out | ECS Express Mode |
+| Kubernetes with AWS-managed nodes | EKS Auto Mode |
 
 Once your containers are running, the next question is: what if you don't even want to think about containers — you just want to hand AWS your code? That's Elastic Beanstalk, up next.

@@ -56,7 +56,7 @@ Eventual consistency is half price because it may serve a copy that's a heartbea
 | Feature | The one-liner |
 |---|---|
 | **DAX** (DynamoDB Accelerator) | In-memory cache in front of DynamoDB: **microsecond** reads, **API-compatible = ZERO code changes**, works **only** with DynamoDB. (Need caching for anything else, or need code-level flexibility → ElastiCache.) |
-| **Global Tables** | **Multi-region ACTIVE-ACTIVE**: users read *and write* locally in every region, DynamoDB replicates. Requires **Streams enabled**. Contrast: **Aurora Global Database = one writer region** (active-passive writes). |
+| **Global Tables** | **Multi-region ACTIVE-ACTIVE**: users read *and write* locally in every region, DynamoDB replicates. Requires **Streams enabled**. Contrast: **Aurora Global Database = one writer region** (active-passive writes). Two consistency modes, **chosen at creation and not changeable**: **MREC** (multi-Region eventual consistency — the classic behavior) and **MRSC** (multi-Region **strong** consistency, June 2025 — strongly consistent reads of the latest write in any Region, for the highest-resilience apps; uses three Regions, or two plus a witness). MRSC does **not** support transactions, TTL or LSIs. Newer (MREC only): replication **across AWS accounts** (Feb 2026) and **disassociating a replica** to turn it back into a single-Region table (Oct 2026). |
 | **Streams** | A **change feed**: every insert/update/delete recorded for **24 hours**, typically triggering **Lambda**. Keyword: *"react to item changes."* |
 | **TTL** (Time To Live) | Put an expiry timestamp attribute on items → DynamoDB **auto-deletes them for FREE** (no WCU). Deletion happens within ~**48 hours** of expiry, not the exact second. Classic: session data, temp tokens. |
 | **GSI** (Global Secondary Index) | Query the table by a **different attribute** (e.g., by email when the key is user_id). Can be added **ANYTIME**, has its **own capacity**. |
@@ -82,6 +82,7 @@ Any question asking for a "fully serverless web/API architecture" is assembling 
 > *"Flash sale causes unpredictable spikes; table throttles"* → **On-Demand capacity mode** (pay-per-request absorbs spikes)
 > *"Reduce read latency to microseconds without changing application code"* → **DAX** (API-compatible cache, DynamoDB-only)
 > *"Global users need low-latency reads AND writes in every region"* → **Global Tables** (active-active; Aurora Global has only one writer)
+> *"Multi-Region DynamoDB where a read in any Region must return the latest write (zero data loss on Region failure)"* → **Global Tables with multi-Region strong consistency (MRSC)** (default MREC is eventually consistent)
 > *"Run custom logic whenever items are added or modified"* → **DynamoDB Streams + Lambda** (24-hour change feed triggers functions)
 > *"Automatically remove session records after 30 minutes, at no cost"* → **TTL** (free auto-delete, ~48h window)
 > *"Table keyed on user_id, but app must also query by email"* → **GSI** (new query attribute, addable anytime — LSI is creation-time-only bait)
@@ -100,6 +101,7 @@ Any question asking for a "fully serverless web/API architecture" is assembling 
 | Steady, predictable traffic | Provisioned (+ auto scaling) |
 | Microseconds, no code change | DAX |
 | Multi-region active-active | Global Tables (needs Streams) |
+| Multi-region + always-latest reads | Global Tables MRSC (no transactions/TTL/LSI) |
 | React to item changes | Streams → Lambda |
 | Auto-expire items free | TTL |
 | Query by another attribute, existing table | GSI (LSI = creation-time trap) |

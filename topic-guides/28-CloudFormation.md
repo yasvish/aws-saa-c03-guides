@@ -31,6 +31,13 @@ THE trap: manual console edits to stack-managed resources don't update the templ
 
 **CDK in one line:** the Cloud Development Kit lets you write infrastructure in **Python/TypeScript/Java**, which *compiles down to CloudFormation templates*. "Developers want to define infrastructure in a real programming language with loops and logic" → **CDK**.
 
+### Newer CloudFormation features (2026)
+
+- **Pre-deployment validation (Jun 2026)** — validation now runs automatically on **Create Stack and Update Stack**, not only when you build a change set. It adds warning-level checks for service quotas, AWS Config recorder conflicts and ECR repository deletion readiness. The "catch problems *before* resources are touched" idea, now on every operation.
+- **Express mode (Jun 2026)** — finishes a stack operation once resource configuration is applied, **without waiting for stabilization checks**, for deployments up to ~4x faster at no extra cost. **Rollback is disabled by default** in express mode, so it suits iterative dev loops, not cautious production updates.
+- **Fn::GetStackOutput (May 2026)** — reads another stack's outputs **across accounts and Regions** (via an IAM role). The classic **Export / ImportValue** only works within the **same account and Region**.
+- **Instance Refresh update policy (Jul 2026)** — when an update requires replacing instances, CloudFormation starts an EC2 Auto Scaling Instance Refresh automatically; rollback goes through normal stack rollback.
+
 **Elastic Beanstalk contrast:** Beanstalk is web-app-shaped automation — hand it code, it builds the standard web stack (and uses CloudFormation underneath). CloudFormation itself can build **any** infrastructure in any shape. Beanstalk = specific meal deal; CloudFormation = whole grocery store.
 
 ## Question patterns
@@ -51,6 +58,8 @@ THE trap: manual console edits to stack-managed resources don't update the templ
 
 > *"Reuse a common VPC pattern across many templates"* → **Nested Stacks** (componentize the recipe)
 
+> *"A stack in one Region/account needs another stack's output"* → **Fn::GetStackOutput** (ImportValue is same account + Region only)
+
 ## Pocket card
 
 | Keyword | Answer |
@@ -63,6 +72,8 @@ THE trap: manual console edits to stack-managed resources don't update the templ
 | Protect resource during updates | Stack Policy |
 | Reusable template components | Nested Stacks |
 | Share values between stacks | Outputs + Export / ImportValue |
+| Cross-account / cross-Region stack outputs | Fn::GetStackOutput |
+| Faster deploys, skip stabilization, no default rollback | Express mode |
 | Only required template section | Resources |
 | Failed creation | Automatic rollback (default) |
 

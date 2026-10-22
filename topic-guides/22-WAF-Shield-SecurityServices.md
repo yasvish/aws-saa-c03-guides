@@ -47,6 +47,8 @@ THE trap: *"attach WAF to a Network Load Balancer"* → **impossible**. NLB is L
 - **Shield Standard**: **free, automatic, for everyone**. Protects against common **Layer 3/4** attacks (SYN floods, UDP reflection). You already have it — nothing to enable.
 - **Shield Advanced**: **~$3,000/month** (1-year commitment). Adds **Layer 7 DDoS protection**, a **24/7 DDoS Response Team (DRT)** of human experts you can call mid-attack, and **cost protection** — AWS refunds the scaling charges the attack caused.
 
+**2026 change:** Shield Advanced's automatic application-layer mitigation is being replaced by the **AWS WAF Anti-DDoS managed rule group** (50 WCUs, adds a **Challenge** action and Low/Medium/High sensitivity, plus an AntiDDoS dashboard in the WAF console). AWS is auto-adding it to eligible web ACLs, and the old automatic mitigation is scheduled to sunset in early 2027. Shield Advanced also gained **DDoS attack flow logs** (May 2026) to S3, CloudWatch Logs or Firehose for forensics. The exam answer for L7 DDoS is unchanged: **WAF + Shield Advanced**.
+
 **Memory hook:** any question mentioning **L7 DDoS, expert help, or refunds for attack-driven scaling** → **Shield Advanced**. A plain "protect against common DDoS at no cost" → **Shield Standard** (it's already on).
 
 ### Firewall Manager — the head of security for the whole chain
@@ -67,10 +69,10 @@ These are pure matching questions. Burn in the one-liners:
 
 | Service | One-liner |
 |---|---|
-| **GuardDuty** | **ML threat detection** on **CloudTrail, VPC Flow Logs, DNS logs** — no agents. Finds **cryptomining, unusual API calls, compromised credentials** |
+| **GuardDuty** | **ML threat detection** on **CloudTrail, VPC Flow Logs, DNS logs** — no agents. Finds **cryptomining, unusual API calls, compromised credentials**. Newer: **Extended Threat Detection** links signals into multi-step **attack sequences**, and **AI Protection** covers Bedrock and SageMaker |
 | **Macie** | **PII / sensitive data discovery in S3** (ML finds credit cards, SSNs) |
 | **Inspector** | **Vulnerability scanner** — **CVEs** on **EC2 (via SSM agent), ECR container images, Lambda** |
-| **Security Hub** | **Aggregation dashboard** — collects findings from all the above + runs compliance standards (CIS, PCI) |
+| **Security Hub** | **Aggregation dashboard** — collects findings from all the above + runs compliance standards (CIS, PCI). Now GA as a unified service with **near real-time risk prioritization**, 1-year trends, and an AI inventory; it is also extending to **multicloud (Azure)** |
 | **Detective** | **Investigate AFTER a finding** — builds a graph of relationships to find **root cause** |
 | **Artifact** | **Download AWS compliance reports** (SOC, PCI, ISO) to hand to auditors |
 

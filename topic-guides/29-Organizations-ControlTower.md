@@ -20,6 +20,10 @@ THE trap: **SCPs do NOT apply to the management account.** The building owner is
 
 A second sneaky pattern: *"A user has AdministratorAccess in a member account but gets Access Denied."* Nothing is broken — **check the SCP** on their account or OU.
 
+**RCPs (Resource Control Policies, Nov 2024)** — SCPs' sibling. Where an SCP caps what **identities (IAM users/roles)** can do, an **RCP caps what can be done to your resources**, no matter whose policy allows it. Like SCPs they **never grant** permissions. Launched covering **S3, STS, KMS, SQS and Secrets Manager**; since extended to Cognito and CloudWatch Logs (Jan 2026) and DynamoDB (Feb 2026), with the per-organization quota raised to 2,000 (Jul 2026). Classic use: a **data perimeter** — "no resource in the org may be accessed by principals from outside the org." *Identity-side guardrail → SCP; resource-side guardrail → RCP.*
+
+**Declarative policies** — a third policy type that enforces a **baseline configuration of a service org-wide** (launched with EC2, EBS and VPC settings, e.g. block public AMI sharing / enforce IMDSv2) so the setting holds even if new APIs or features appear later.
+
 **Control Tower** — Organizations gives you the raw tree; **Control Tower is the automated, opinionated setup on top of it**. It builds a **landing zone** (a pre-architected multi-account environment with logging, audit accounts, SSO), and provides:
 
 | Piece | What it does |
@@ -27,6 +31,11 @@ A second sneaky pattern: *"A user has AdministratorAccess in a member account bu
 | **Account Factory** | Self-service creation of **new, standardized, pre-configured accounts** |
 | **Preventive guardrails** | Implemented as **SCPs** — *block* disallowed actions |
 | **Detective guardrails** | Implemented as **AWS Config rules** — *detect and flag* violations after the fact |
+
+Newer Control Tower bits:
+- **Controls-dedicated experience (Nov 2025)** — use Control Tower's **750+ managed controls** on your existing Organizations accounts **without building a full landing zone**.
+- **Region deny at the OU level** — previously the Region-deny control applied to the whole landing zone only; it can now target an individual OU (part of the added digital sovereignty controls).
+- **Account Factory for Terraform (AFT)** can now re-apply an account's customizations when it moves between OUs (opt-in, Jul 2026).
 
 Signal phrase: "set up / automate a **governed, secure multi-account environment** with best practices" → **Control Tower**. If the question is just about grouping accounts or billing, plain Organizations suffices.
 
@@ -50,6 +59,10 @@ Signal phrase: "set up / automate a **governed, secure multi-account environment
 
 > *"Guardrail that flags noncompliant resources but doesn't block creation"* → **Detective guardrail** (Config rule; preventive = SCP = block)
 
+> *"Prevent principals outside the organization from accessing S3 buckets / KMS keys in any member account"* → **RCP** (resource-side data perimeter; SCPs only limit your own identities)
+
+> *"Apply Control Tower controls to existing accounts without a landing zone"* → **Controls-dedicated experience**
+
 ## Pocket card
 
 | Keyword | Answer |
@@ -57,6 +70,9 @@ Signal phrase: "set up / automate a **governed, secure multi-account environment
 | Block actions org-wide / by OU | SCP |
 | SCP grants permissions? | Never — ceiling only (needs IAM allow too) |
 | SCP vs management account | Doesn't apply — exempt |
+| Cap access TO resources org-wide (data perimeter) | RCP (resource control policy) |
+| Enforce a service's baseline config org-wide | Declarative policy |
+| Control Tower controls, no landing zone | Controls-dedicated experience |
 | One bill, shared RI/SP discounts | Consolidated billing |
 | Automated governed multi-account setup | Control Tower |
 | Self-service standardized new accounts | Account Factory |

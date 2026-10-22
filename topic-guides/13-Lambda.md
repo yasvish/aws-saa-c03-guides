@@ -20,6 +20,8 @@ Spell it out: Lambda is **serverless compute**. You upload a **function** (your 
 
 **THE trap:** *"a 2-hour video processing job"* → **NOT Lambda** — 15-minute ceiling. Answer: **AWS Batch** or **ECS/Fargate**. **Step Functions** is only right if the work can be **divided into chunks under 15 minutes each**.
 
+*Newer wrinkle:* on **Lambda Managed Instances** (see below), async and event-source-mapping invocations can now run up to **90 minutes** (sync stays at 15), and **durable functions** can span long waits. For the exam, a standard Lambda question still means 15 minutes.
+
 **THE trap (the counterintuitive favorite):** *"CPU-bound Lambda function is slow — how to speed it up?"* → **increase the memory**. There's no CPU setting; **more memory = more CPU**. It reads like a wrong answer. It's the right one.
 
 ### Three ways a Lambda gets invoked
@@ -38,6 +40,7 @@ Two similarly-named settings, opposite jobs — hook: **P = Pre-warmed, R = Rest
 
 - **Provisioned Concurrency** = **Pre-warmed** instances always ready → **kills cold starts**. Answer to latency questions.
 - **Reserved Concurrency** = a **Restricted cap** on how many copies can run at once → **protects downstream systems** (e.g., a fragile legacy database that dies past 50 connections).
+- **SnapStart** = the *free-ish* cold-start fix: Lambda snapshots the initialized function and restores from it. Supported on **Java 11+, Python 3.12+ and .NET 8+** (no extra cost for Java; Python/.NET pay for snapshot caching and restores). It **doesn't work with Provisioned Concurrency, EFS, or ephemeral storage over 512 MB**. *"Cut Java cold starts without paying for always-on capacity"* → **SnapStart**.
 
 ### Lambda in a VPC
 
@@ -52,6 +55,14 @@ And whenever **Lambda talks to RDS**: hundreds of short-lived functions each ope
 - **Container images**: deploy Lambda as a container up to **10 GB** — the answer when dependencies blow past the 250 MB zip limit.
 - **Environment variables**: config outside code; encrypt secrets with **KMS**.
 - **EventBridge scheduled rule → Lambda** = **serverless cron**. Any *"run a task every night at 2 AM without servers"* → this.
+
+### Newer Lambda features worth recognizing
+
+- **Durable functions** (Dec 2025): write a multi-step workflow as ordinary code; Lambda **checkpoints progress, can suspend for up to a year while waiting, and resumes after failures**. It's the code-first alternative to Step Functions for long-running, multi-step or human-in-the-loop flows.
+- **Lambda Managed Instances** (Nov 2025): Lambda functions running on **EC2 instances in your account**, still managed by AWS. You get EC2 instance choice (incl. Graviton) and **Savings Plan/RI discounts** for steady, high-volume workloads, plus a 15% management fee. Pick it when *"keep the Lambda programming model but need specific hardware or cheaper steady-state pricing"*.
+- **Larger async payloads** (Jan 2026): async invocations, SQS and EventBridge payloads up to **1 MB** (was 256 KB).
+- **Full IAM resource-based policies** (Aug 2026) on functions, with the full set of condition keys.
+- **Lambda Web Functions** (Oct 2026): a function that serves HTTP directly with a web framework (Node.js first); billed on active CPU time. Existing functions are being renamed *Event Functions* (naming only).
 
 ### Code at the edge: Lambda@Edge vs CloudFront Functions
 
@@ -80,6 +91,8 @@ Rule: *needs external calls or real logic* → **Lambda@Edge**; *trivial header/
 > *"Rewrite URLs or add security headers on millions of requests, cheapest"* → **CloudFront Functions** (sub-ms, ~1/6 price, no network)
 > *"Asynchronously invoked function fails and events disappear"* → **DLQ / on-failure destination** (async retries twice, then drops)
 > *"Lambda should process SQS messages"* → **Event Source Mapping** (Lambda pulls in batches; failures return to the queue)
+> *"Java function has slow cold starts; avoid paying for Provisioned Concurrency"* → **SnapStart**
+> *"Multi-step workflow written as code that must wait hours/days and survive failures"* → **Lambda durable functions** (or Step Functions if a visual/declarative workflow is fine)
 
 ## Pocket card
 
@@ -89,6 +102,9 @@ Rule: *needs external calls or real logic* → **Lambda@Edge**; *trivial header/
 | Divisible into <15-min steps | Step Functions |
 | CPU-bound slow function | Increase memory |
 | Cold start latency | Provisioned Concurrency (Pre-warmed) |
+| Cold starts, Java/Python/.NET, no always-on cost | SnapStart |
+| Long-running multi-step workflow in code | Durable functions |
+| Lambda on your own EC2 capacity / Savings Plans | Lambda Managed Instances |
 | Protect downstream / cap invocations | Reserved Concurrency (Restricted) |
 | Lambda + RDS | RDS Proxy (+ VPC config) |
 | VPC Lambda lost internet | NAT Gateway / VPC endpoints |

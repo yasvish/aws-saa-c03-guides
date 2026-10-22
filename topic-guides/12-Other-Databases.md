@@ -27,6 +27,11 @@ But first, one concept from zero, because it anchors half the zoo:
 | **Keyspaces** | The keyword is literally **"Cassandra."** Apache Cassandra-compatible, serverless. |
 | **OpenSearch** | **Full-text / fuzzy search** + **log analytics with dashboards** (the old Elasticsearch/Kibana). Search "runing shoes" and still find running shoes. |
 
+**Lifecycle changes to know:**
+- **Timestream for LiveAnalytics** closed to new customers on **June 20, 2025** (existing customers keep using it). AWS now points time-series workloads at **Timestream for InfluxDB**. The exam keyword (*time-series / IoT*) is still **Timestream**.
+- **QLDB**: AWS has published guidance for migrating QLDB ledgers to **Aurora PostgreSQL** (export to S3, Glue, DMS, with audit tables/pgAudit replacing history and streams). Treat QLDB as a legacy service: if a newer question wants an audited, immutable history, expect Aurora PostgreSQL with audit logging, but the "immutable verifiable ledger" keyword still maps to QLDB in older question styles.
+- **Redshift Serverless** now uses **AI-driven scaling by default** for new workgroups, with a base capacity as low as **8 RPUs** (was 32). Redshift can also **query S3 data lake tables in another Region** (Oct 2026) and supports **zero-ETL** ingestion from sources like Aurora with concurrency scaling.
+
 ### The two comparisons worth 30 extra seconds
 
 **Athena vs Redshift** — both do SQL analytics, so which?
@@ -74,7 +79,7 @@ All three shrink bytes scanned = smaller bill. Memorize the trio.
 | Graph / social / fraud ring / recommendations | Neptune |
 | Immutable verifiable ledger, centralized | QLDB |
 | Decentralized, multi-party, no central authority | Managed Blockchain |
-| Time-series / IoT / telemetry / metrics | Timestream |
+| Time-series / IoT / telemetry / metrics | Timestream (new workloads: Timestream for InfluxDB) |
 | "MongoDB" | DocumentDB |
 | "Cassandra" | Keyspaces |
 | Full-text / fuzzy search, log dashboards | OpenSearch |

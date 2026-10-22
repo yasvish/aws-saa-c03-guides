@@ -41,6 +41,11 @@ Content closer vs journey faster. Hold on to that, and most questions solve them
 
 **Field-level encryption** = encrypt specific sensitive form fields (credit card number) **at the edge**, so only your final application — not even your origin infrastructure — can decrypt them.
 
+**Newer CloudFront features:**
+
+- **VPC origins** (Nov 2024): CloudFront can reach an ALB, NLB or EC2 instance in a **private subnet**, so the origin needs no public IP and no internet exposure. Later additions: WebSocket support (May 2026) and dual-stack/IPv6 (Oct 2026). *"Origin must not be reachable from the internet, only through CloudFront"* → **VPC origin** (no public ALB needed).
+- **Flat-rate pricing plans** (Nov 2025): a monthly fee (Free, Pro, Business, Premium tiers) that bundles CDN with WAF, DDoS protection, bot management and Route 53 DNS, with **no overage charges** (going over your allowance may reduce performance, but you aren't billed extra). *"Predictable CDN cost, no surprise bills"* → **flat-rate pricing plan**.
+
 ## Global Accelerator
 
 - Gives you **2 static anycast IP addresses** — the same two IPs work worldwide, and they **never change**. Anycast means the internet automatically routes each user to the *nearest* AWS edge announcing those IPs. **Static IPs = the whitelisting answer**: when a client's firewall team demands fixed IPs to allow, CloudFront (thousands of shifting edge IPs) can't help; GA can.
@@ -98,10 +103,14 @@ Global users use a TCP/UDP app (non-HTTP)   → Global Accelerator
 
 > *"Attach a custom domain certificate to a CloudFront distribution"* → **ACM certificate in us-east-1** (always, regardless of your app's region).
 
+> *"Serve content through CloudFront from an ALB in a private subnet, no public exposure"* → **CloudFront VPC origin**.
+
 ## Pocket card
 
 | Keyword in question | Answer |
 |---|---|
+| origin in a private subnet, only via CloudFront | **VPC origin** |
+| predictable CDN bill, no overages | Flat-rate pricing plan |
 | global static content, low latency | **CloudFront** |
 | "S3 only via CloudFront", private bucket | **OAC** (OAI = legacy distractor) |
 | one paid file | **Signed URL** |

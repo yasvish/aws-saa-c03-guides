@@ -24,6 +24,8 @@ Read the question's verb: *slow/high/alert* → CloudWatch. *Who/deleted/changed
 
 **Dashboards** are **cross-region** — one pane of glass for a global app.
 
+**Newer CloudWatch bits (2026):** alarms gained **warm-up periods** (skip evaluation right after creation so startup gaps don't page you); **cross-region telemetry auditing and enablement rules** (turn on telemetry for EC2, VPC, CloudTrail etc. across Regions from one place, Apr 2026); **Logs Intelligent Tiering** (moves logs untouched for 30/90 days to cheaper tiers, promotes them back when queried); ALB logs can be delivered straight to CloudWatch Logs; native OpenTelemetry metrics with PromQL querying are GA.
+
 ## CloudTrail — "WHO did WHAT?"
 
 Every API call — console click, CLI command, SDK call — is recorded: identity, time, source IP, parameters.
@@ -31,13 +33,16 @@ Every API call — console click, CLI command, SDK call — is recorded: identit
 - **90-day event history is free** and automatic. For longer retention, create a **Trail → S3** (and make it a **multi-region trail** — a best practice and a favorite answer).
 - **Management events** (control plane: create/terminate/modify resources) are logged **by default**. **DATA events** (S3 **object-level** reads/writes, Lambda invokes) are **opt-in and cost extra** — THE trap: *"who deleted the object in the bucket?"* → default CloudTrail can't say; you need **data events enabled**.
 - **Log file integrity validation**: cryptographically prove logs weren't tampered with — the "forensics/court" keyword.
-- **CloudTrail Insights**: detects **unusual API activity** (sudden spike in TerminateInstances).
+- **CloudTrail Insights**: detects **unusual API activity** (sudden spike in TerminateInstances). Event aggregation and Insights are now also available for **data events** (extra cost).
+- AWS Organizations now emits CloudTrail events when accounts **join or leave** an organization (May 2026) — feed them to EventBridge/CloudWatch alarms to alert on membership changes.
 
 ## AWS Config — "what did it look like, and is it compliant?"
 
 - A **configuration recorder** snapshots your resources' settings every time they change, giving you a **timeline** per resource — "what did this security group look like **last Tuesday**?" → Config.
 - **Config rules** (AWS-**managed** or **custom** Lambda-backed) continuously evaluate compliance: "no security group may allow SSH from 0.0.0.0/0". Results roll up to a **compliance dashboard**.
 - **Auto-remediation**: a noncompliant resource can trigger an **SSM Automation document** to fix itself — "automatically close world-open SSH" → **Config rule + remediation action**.
+
+- Config keeps expanding coverage: hundreds of new **managed rules** (75 in Mar 2026, 191 in Jul 2026) and 60 new resource types (Sep 2026), deployable in bulk via **conformance packs** — the exam concept is unchanged.
 
 **THE trap: Config does NOT prevent anything.** It **detects** and (optionally) remediates *after the fact*. If the question says "**prevent** users from ever doing X" → that's **SCPs** (or IAM), not Config.
 
